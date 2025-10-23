@@ -1,0 +1,10 @@
+# Python Environment & Build Files
+venv/
+__pycache__/
+
+
+creditcard.csv
+*.joblib
+
+
+*.rtf
