@@ -11,7 +11,7 @@ from sklearn.metrics import classification_report, confusion_matrix, roc_auc_sco
 
 # --- 1. Data Loading and Feature Engineering ---
 print("1. Loading Data and Engineering 'Hour' Feature...")
-data = pd.read_csv('creditcard.csv')
+data = pd.read_csv('F2025-Team1\data\creditcard.csv')
 
 # Feature Engineering: Convert 'Time' (seconds elapsed) into 'Hour' (0-24)
 data['Hour'] = data['Time'].apply(lambda x: (x / 3600) % 24)
