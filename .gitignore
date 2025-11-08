@@ -4,4 +4,42 @@ data/
 creditcard.csv
 *.joblib
 *.rtf
+
+# macOS
 .DS_Store
+
+# Xcode build artifacts
+build/
+DerivedData/
+
+# Xcode user settings (never commit)
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+
+# Old Xcode per-user files (defensive)
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+# Swift Package Manager workspace user data
+.swiftpm/xcode/xcuserdata/
+.swiftpm/xcode/package.xcworkspace/xcuserdata/
+
+# (Optional) If you ever add CocoaPods/Carthage/SPM sources:
+Pods/
+Cartfile.resolved
+Carthage/
+Packages/
+
+# If you keep any local secrets/configs
+.env
+*.secret.*
+
