@@ -10,11 +10,27 @@
 		0772CF242EB6C78B00B0B271 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 0772CF232EB6C78B00B0B271 /* Supabase */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		07616B482ECA6288002F1A45 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0772CF002EB6C1A500B0B271 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0772CF072EB6C1A500B0B271;
+			remoteInfo = CreditCardFraudApp;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		07616B442ECA6288002F1A45 /* CreditCardFraudAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CreditCardFraudAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0772CF082EB6C1A500B0B271 /* CreditCardFraudApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CreditCardFraudApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		07616B452ECA6288002F1A45 /* CreditCardFraudAppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CreditCardFraudAppTests;
+			sourceTree = "<group>";
+		};
 		0772CF0A2EB6C1A500B0B271 /* CreditCardFraudApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CreditCardFraudApp;
@@ -23,6 +39,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		07616B412ECA6288002F1A45 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0772CF052EB6C1A500B0B271 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -38,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				0772CF0A2EB6C1A500B0B271 /* CreditCardFraudApp */,
+				07616B452ECA6288002F1A45 /* CreditCardFraudAppTests */,
 				0772CF222EB6C78B00B0B271 /* Frameworks */,
 				0772CF092EB6C1A500B0B271 /* Products */,
 			);
@@ -47,6 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				0772CF082EB6C1A500B0B271 /* CreditCardFraudApp.app */,
+				07616B442ECA6288002F1A45 /* CreditCardFraudAppTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -61,6 +86,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		07616B432ECA6288002F1A45 /* CreditCardFraudAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 07616B4A2ECA6288002F1A45 /* Build configuration list for PBXNativeTarget "CreditCardFraudAppTests" */;
+			buildPhases = (
+				07616B402ECA6288002F1A45 /* Sources */,
+				07616B412ECA6288002F1A45 /* Frameworks */,
+				07616B422ECA6288002F1A45 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				07616B492ECA6288002F1A45 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				07616B452ECA6288002F1A45 /* CreditCardFraudAppTests */,
+			);
+			name = CreditCardFraudAppTests;
+			packageProductDependencies = (
+			);
+			productName = CreditCardFraudAppTests;
+			productReference = 07616B442ECA6288002F1A45 /* CreditCardFraudAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		0772CF072EB6C1A500B0B271 /* CreditCardFraudApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 0772CF132EB6C1A600B0B271 /* Build configuration list for PBXNativeTarget "CreditCardFraudApp" */;
@@ -94,6 +142,10 @@
 				LastSwiftUpdateCheck = 1630;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
+					07616B432ECA6288002F1A45 = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = 0772CF072EB6C1A500B0B271;
+					};
 					0772CF072EB6C1A500B0B271 = {
 						CreatedOnToolsVersion = 16.3;
 					};
@@ -117,11 +169,19 @@
 			projectRoot = "";
 			targets = (
 				0772CF072EB6C1A500B0B271 /* CreditCardFraudApp */,
+				07616B432ECA6288002F1A45 /* CreditCardFraudAppTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		07616B422ECA6288002F1A45 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0772CF062EB6C1A500B0B271 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -132,6 +192,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		07616B402ECA6288002F1A45 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		0772CF042EB6C1A500B0B271 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -141,7 +208,51 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		07616B492ECA6288002F1A45 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0772CF072EB6C1A500B0B271 /* CreditCardFraudApp */;
+			targetProxy = 07616B482ECA6288002F1A45 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		07616B4B2ECA6288002F1A45 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = S7N3TR8KFC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = HelmrichTyler.CreditCardFraudAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CreditCardFraudApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CreditCardFraudApp";
+			};
+			name = Debug;
+		};
+		07616B4C2ECA6288002F1A45 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = S7N3TR8KFC;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = HelmrichTyler.CreditCardFraudAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CreditCardFraudApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CreditCardFraudApp";
+			};
+			name = Release;
+		};
 		0772CF112EB6C1A600B0B271 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -322,6 +433,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		07616B4A2ECA6288002F1A45 /* Build configuration list for PBXNativeTarget "CreditCardFraudAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07616B4B2ECA6288002F1A45 /* Debug */,
+				07616B4C2ECA6288002F1A45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		0772CF032EB6C1A500B0B271 /* Build configuration list for PBXProject "CreditCardFraudApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
