@@ -1,0 +1,72 @@
+//
+//  Repository.swift
+//  CreditCardFraudApp
+//
+//  Created by Tyler Helmrich on 11/16/25.
+//
+
+import Foundation
+
+class Repository {
+    private let networkInterface: NetworkInterface
+    
+    init(networkInterface: NetworkInterface) {
+        self.networkInterface = networkInterface
+    }
+    
+    /// Get User Information
+    /// - Parameter completion: Completion handler with result containing User presentation model
+    func getUserInformation(completion: @escaping (Result<User, Error>) -> Void) {
+        networkInterface.getUserInformation { result in
+            switch result {
+            case .success(let userInfoResponse):
+                // Convert network model (NetworkUser) to presentation model (User)
+                let user = User(
+                    id: userInfoResponse.user.id,
+                    name: userInfoResponse.user.name,
+                    creditCards: userInfoResponse.user.creditCards.map { networkCard in
+                        CreditCard(
+                            ccNumber: networkCard.ccNumber,
+                            exp: networkCard.exp,
+                            iss: networkCard.iss,
+                            created_at: networkCard.created_at
+                        )
+                    }
+                )
+                completion(.success(user))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    /// Get User Transactions
+    /// - Parameter completion: Completion handler with result containing array of Transaction presentation models
+    func getUserTransactions(completion: @escaping (Result<[Transaction], Error>) -> Void) {
+        networkInterface.getUserTransactions { result in
+            switch result {
+            case .success(let transactionsResponse):
+                // Convert network models to presentation models
+                let transactions = transactionsResponse.transactions.map { transactionDetail in
+                    Transaction(
+                        id: UUID(uuidString: transactionDetail.txn_id) ?? UUID(),
+                        creditCardNumber: transactionDetail.ccNumber,
+                        location: "", // Not available in network response
+                        city: "", // Not available in network response
+                        state: "", // Not available in network response
+                        date: transactionDetail.date,
+                        time: transactionDetail.time,
+                        amount: transactionDetail.amount,
+                        longitude: transactionDetail.longitude,
+                        latitude: transactionDetail.latitude,
+                        userId: transactionDetail.userId
+                    )
+                }
+                completion(.success(transactions))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+}
+
