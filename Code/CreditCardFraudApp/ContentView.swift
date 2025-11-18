@@ -39,22 +39,15 @@ class CreditCardFraudViewModel {
 struct ContentView: View {
     @State var vm = CreditCardFraudViewModel()
     var body: some View {
-        VStack(spacing: 20) {
-            Button("Insert Credit Card") {
-                Task {
-                    await vm.insertCreditCard()
-                }
+            List{
+                Text("Hello World")
+                Text("Hello World")
+                Text("Hello World")
             }
-            Button("Insert Transaction") {
-                Task {
-                    await vm.insertTransaction()
-                }
-            }
-        }
-        .padding()
     }
 }
 
-#Preview {
-    ContentView()
-}
+////#Preview {
+//    ContentView(
+//    )
+//}
