@@ -10,58 +10,67 @@ import SwiftUI
 
 
 struct LandingPageView: View{
+    @State private var navigationPath = NavigationPath()
     var body: some View {
-        VStack(spacing: 20){
-            // Header Component
-            HStack{
-                Image(systemName: "banknote") //Placeholder for Logo
-                Text("App Name")
-                    .font(.title)
-                    .fontWeight(.bold)
-                Spacer()
-                Text("Username")
-                    .foregroundColor(.gray)
-            }
-            .padding()
-            
-            // Navigation Component
-            HStack(spacing: 30) {
-                Text("Home")
-                Text("Account")
-                Text("Dashboard")
-            }
-            .font(.headline)
-            .padding(.horizontal)
-            
-            Divider()
-            
-            // Recent Transactions
-            VStack(alignment: .leading,spacing: 15){
-                Text("Credit Cards")
-                    .font(.headline)
+        NavigationStack(path: $navigationPath) {
+            VStack(spacing: 20){
+                // Header Component
+                HStack{
+                    Image(systemName: "banknote") //Placeholder for Logo
+                    Text("Fraud Stopper")
+                        .font(.title)
+                        .fontWeight(.bold)
+                    Spacer()
+                }
+                .padding(8)
                 
-                TransactionRow(amount: "$2,000.00", description: "Vacation")
-                TransactionRow(amount: "$1,500.00", description: "Business Travel")
-                
-                .padding(.horizontal)
                 
                 Divider()
                 
-                // Credit Cards
-                VStack(alignment: .leading, spacing: 16){
+                // Recent Transactions
+                VStack(alignment: .leading,spacing: 15){
                     Text("Credit Cards")
                         .font(.headline)
+                    
+                    TransactionRow(amount: "$2,000.00", description: "Vacation")
+                    TransactionRow(amount: "$1,500.00", description: "Business Travel")
+                    
+                    
+                    Divider()
+                    
+                    // Credit Cards
+                    VStack(alignment: .leading, spacing: 16){
+                        Text("Credit Cards")
+                            .font(.headline)
+                    }
+                    
+                    
+                    CreditCardView(color: .orange, brand: "Mastercard", number: "**** **** **** 5678")
+                        .onTapGesture {
+                            navigationPath.append("Hello World")
+                        }
+                        .navigationDestination(for:String.self, destination: {_ in
+                            
+                            TransactionListView()
+                            
+                        })
+                    
+                    CreditCardView(color: .blue, brand: "Visa", number: "**** **** **** 1234")
+                        .onTapGesture {
+                            navigationPath.append("Hello World")
+                        }
+                        .navigationDestination(for:String.self, destination: {_ in
+                            
+                            TransactionListView()
+                            
+                        })
+
+                    //                AddCardButton()
                 }
+                .padding(.horizontal)
                 
-                
-                CreditCardView(color: .orange, brand: "Mastercard", number: "**** **** **** 5678")
-                CreditCardView(color: .blue, brand: "Visa", number: "**** **** **** 1234")
-                
-                AddCardButton()
+                Spacer()
             }
-            .padding(.horizontal)
-            
-            Spacer()
         }
     }
 }
@@ -76,11 +85,12 @@ struct TransactionRow: View{
         HStack {
             Text(amount)
                 .fontWeight(.semibold)
+            
             Spacer()
+            
             Text(description)
                 .foregroundColor(.gray)
         }
-        .padding(.vertical, 4)
     }
 }
 

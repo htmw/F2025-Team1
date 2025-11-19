@@ -41,43 +41,35 @@ class CreditCardFraudViewModel {
     }
     
     func loadTransactions() {
-        isLoading = true
-        errorMessage = nil
-        
-        repository.getUserTransactions { [weak self] result in
-            Task { @MainActor in
-                guard let self = self else { return }
-                self.isLoading = false
-                
-                switch result {
-                case .success(let transactions):
-                    self.transactions = transactions
-                case .failure(let error):
-                    self.errorMessage = error.localizedDescription
-                }
-            }
-        }
+//        isLoading = true
+//        errorMessage = nil
+//        
+//        repository.getUserTransactions { [weak self] result in
+//            Task { @MainActor in
+//                guard let self = self else { return }
+//                self.isLoading = false
+//                
+//                switch result {
+//                case .success(let transactions):
+//                    self.transactions = transactions
+//                case .failure(let error):
+//                    self.errorMessage = error.localizedDescription
+//                }
+//            }
+//        }
+        transactions = [
+            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+        ]
     }
 }
 
-struct ContentView: View {
+struct TransactionListView: View {
     @Environment(CreditCardFraudViewModel.self) var vm
     
     var body: some View {
-<<<<<<< HEAD
-            List{
-                Text("Hello World")
-                Text("Hello World")
-                Text("Hello World")
-            }
-    }
-}
-
-////#Preview {
-//    ContentView(
-//    )
-//}
-=======
         List {
             ForEach(vm.transactions, id: \.id) { t in
                 HStack {
@@ -125,6 +117,3 @@ struct ContentView: View {
 //     ContentView()
 //         .environment(viewModel)
 // }
->>>>>>> d6dfad7d946d297c05e6df8263b7d285b10fb276
-}
-}

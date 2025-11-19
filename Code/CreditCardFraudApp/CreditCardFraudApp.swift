@@ -32,8 +32,10 @@ struct CreditCardFraudApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            LandingPageView()
                 .environment(viewModel)
+//            ContentView()
+//                .environment(viewModel)
         }
     }
 }
