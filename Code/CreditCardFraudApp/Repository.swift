@@ -51,15 +51,16 @@ class Repository {
                     Transaction(
                         id: UUID(uuidString: transactionDetail.txn_id) ?? UUID(),
                         creditCardNumber: transactionDetail.ccNumber,
-                        location: "", // Not available in network response
-                        city: "", // Not available in network response
-                        state: "", // Not available in network response
+                        location: transactionDetail.locationName,
+                        city: transactionDetail.city,
+                        state: transactionDetail.state,
                         date: transactionDetail.date,
                         time: transactionDetail.time,
                         amount: transactionDetail.amount,
                         longitude: transactionDetail.longitude,
                         latitude: transactionDetail.latitude,
-                        userId: transactionDetail.userId
+                        userId: transactionDetail.userId,
+                        isFraudulent: transactionDetail.fraud_flag
                     )
                 }
                 completion(.success(transactions))

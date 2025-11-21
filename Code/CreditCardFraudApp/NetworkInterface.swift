@@ -109,11 +109,13 @@ public struct NetworkCreditCard: Codable {
 public struct NetworkUser: Codable {
     public let id: String
     public let name: String
+    public let isAdmin: Bool
     public let creditCards: [NetworkCreditCard]
     
-    public init(id: String, name: String, creditCards: [NetworkCreditCard]) {
+    public init(id: String, name: String, isAdmin: Bool, creditCards: [NetworkCreditCard]) {
         self.id = id
         self.name = name
+        self.isAdmin = isAdmin
         self.creditCards = creditCards
     }
 }
@@ -133,6 +135,9 @@ public struct TransactionDetail: Codable {
     public let time: String
     public let longitude: Double
     public let latitude: Double
+    public let locationName: String
+    public let city: String
+    public let state: String
     public let amount: Int
     public let created_at: String
     public let fraud_flag: Bool
@@ -140,22 +145,6 @@ public struct TransactionDetail: Codable {
     public let fraud_checked_at: String?
     public let txn_id: String
     public let ts: String
-    
-    public init(userId: String, ccNumber: String, date: String, time: String, longitude: Double, latitude: Double, amount: Int, created_at: String, fraud_flag: Bool, fraud_reason: String?, fraud_checked_at: String?, txn_id: String, ts: String) {
-        self.userId = userId
-        self.ccNumber = ccNumber
-        self.date = date
-        self.time = time
-        self.longitude = longitude
-        self.latitude = latitude
-        self.amount = amount
-        self.created_at = created_at
-        self.fraud_flag = fraud_flag
-        self.fraud_reason = fraud_reason
-        self.fraud_checked_at = fraud_checked_at
-        self.txn_id = txn_id
-        self.ts = ts
-    }
 }
 
 public struct TransactionsResponse: Codable {
@@ -251,6 +240,7 @@ class NetworkInterfaceImpl: NetworkInterface {
             
             do {
                 let decoder = JSONDecoder()
+                print(String(data: data, encoding: .utf8) ?? "No data")
                 let userInfo = try decoder.decode(UserInformationResponse.self, from: data)
                 completion(.success(userInfo))
             } catch {

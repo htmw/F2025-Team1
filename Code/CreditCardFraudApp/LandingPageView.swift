@@ -10,6 +10,7 @@ import SwiftUI
 
 
 struct LandingPageView: View{
+    @Environment(CreditCardFraudViewModel.self) var vm
     @State private var navigationPath = NavigationPath()
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -29,50 +30,46 @@ struct LandingPageView: View{
                 
                 // Recent Transactions
                 VStack(alignment: .leading,spacing: 15){
-                    Text("Credit Cards")
-                        .font(.headline)
-                    
-                    TransactionRow(amount: "$2,000.00", description: "Vacation")
-                    TransactionRow(amount: "$1,500.00", description: "Business Travel")
-                    
-                    
-                    Divider()
-                    
-                    // Credit Cards
-                    VStack(alignment: .leading, spacing: 16){
+                    Group {
+                        Text("Credit Cards")
+                            .font(.headline)
+                        
+                        TransactionRow(amount: "$2,000.00", description: "Vacation")
+                        TransactionRow(amount: "$1,500.00", description: "Business Travel")
+                        
+                        
+                        Divider()
+                        
                         Text("Credit Cards")
                             .font(.headline)
                     }
+                    .padding(.horizontal)
                     
-                    
-                    CreditCardView(color: .orange, brand: "Mastercard", number: "**** **** **** 5678")
-                        .onTapGesture {
-                            navigationPath.append("Hello World")
+                    ScrollView {
+                        ForEach(vm.creditCards, id: \.ccNumber) { cc in
+                            CreditCardView(color: cc.iss == "VISA" ? .blue : (cc.iss == "MASTERCARD" ? .orange : .brown), brand: cc.iss, number: "**** **** **** \(cc.ccNumber.suffix(4))", exp: cc.exp, isFraudulent: (vm.transactions[cc.ccNumber]?.hasFraudulentTransaction ?? false))
+                                .onTapGesture {
+                                    navigationPath.append(cc.ccNumber)
+                                }
+                                .padding(.horizontal)
                         }
-                        .navigationDestination(for:String.self, destination: {_ in
-                            
-                            TransactionListView()
-                            
-                        })
+                    }
                     
-                    CreditCardView(color: .blue, brand: "Visa", number: "**** **** **** 1234")
-                        .onTapGesture {
-                            navigationPath.append("Hello World")
-                        }
-                        .navigationDestination(for:String.self, destination: {_ in
-                            
-                            TransactionListView()
-                            
-                        })
-
                     //                AddCardButton()
                 }
-                .padding(.horizontal)
                 
                 Spacer()
             }
+            .navigationDestination(for:String.self, destination: {
+                TransactionListView(ccNumber: $0, transactions: vm.transactions[$0, default: CreditCardTransactions(ccNumber: $0)].transactions)
+            })
+        }
+        .task {
+            vm.loadUserInformation()
+            vm.loadTransactions()
         }
     }
+    
 }
 
 // Subviews
@@ -98,24 +95,49 @@ struct CreditCardView: View{
     let color: Color
     let brand: String
     let number: String
+    let exp: String
+    let isFraudulent: Bool
     
     var body: some View {
-        ZStack{
+        ZStack(alignment: .topTrailing) {
             RoundedRectangle(cornerRadius: 16)
                 .fill(color)
                 .frame(height: 110)
             
-            VStack(alignment: .leading, spacing: 8){
+            VStack(alignment: .leading){
                 Text(brand)
                     .font(.headline)
                     .foregroundColor(.white)
                 
-                Text(number)
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.9))
+                Spacer()
+                
+                HStack {
+                    Text(number)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.9))
+                    
+                    Spacer()
+                    
+                    Text(exp)
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.9))
+                }
+                
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
+            
+            if isFraudulent {
+                ZStack {
+                    Circle()
+                        .foregroundStyle(.red)
+                        .frame(height: 24)
+                    Text("!")
+                        .bold()
+                        .foregroundStyle(.white)
+                }
+                .offset(x: 6, y: -6)
+            }
         }
         .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
     }
