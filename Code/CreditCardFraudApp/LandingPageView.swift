@@ -12,6 +12,7 @@ import SwiftUI
 struct LandingPageView: View{
     @Environment(CreditCardFraudViewModel.self) var vm
     @State private var navigationPath = NavigationPath()
+    @State private var isShowingAddCreditCard: Bool = false
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack(spacing: 20){
@@ -40,8 +41,12 @@ struct LandingPageView: View{
                         
                         Divider()
                         
-                        Text("Credit Cards")
-                            .font(.headline)
+                        HStack {
+                            Text("Credit Cards")
+                                .font(.headline)
+                            
+                            AddCardButton(show: $isShowingAddCreditCard)
+                        }
                     }
                     .padding(.horizontal)
                     
@@ -55,10 +60,13 @@ struct LandingPageView: View{
                         }
                     }
                     
-                    //                AddCardButton()
                 }
                 
                 Spacer()
+            }
+            .sheet(isPresented: $isShowingAddCreditCard) {
+                AddCreditCardView(vm: vm, show: $isShowingAddCreditCard)
+                    .presentationDetents([.medium])
             }
             .navigationDestination(for:String.self, destination: {
                 TransactionListView(ccNumber: $0, transactions: vm.transactions[$0, default: CreditCardTransactions(ccNumber: $0)].transactions)
@@ -144,18 +152,19 @@ struct CreditCardView: View{
 }
 
 struct AddCardButton: View {
-    var body: some View{
+    @Binding var show: Bool
+    var body: some View {
         Button {
-            // Add card action
+            show.toggle()
         } label: {
-            ZStack {
-                Circle()
+            Image(systemName: "plus")
+                .foregroundColor(.white)
+                .font(.title2)
+                .padding(4)
+                .background {
+                    Circle()
                     .fill(Color.black)
-                    .frame(width: 50, height: 50)
-                Image(systemName: "plus")
-                    .foregroundColor(.white)
-                    .font(.title2)
-            }
+                }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Add credit card")

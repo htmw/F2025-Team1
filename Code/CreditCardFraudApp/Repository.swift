@@ -69,5 +69,31 @@ class Repository {
             }
         }
     }
+    
+    /// Add Credit Card
+    /// - Parameters:
+    ///   - ccNumber: Credit card number
+    ///   - exp: Expiration date (MM/YY format)
+    ///   - sec: Security code
+    ///   - iss: Issuer (e.g., "Visa", "Mastercard")
+    ///   - completion: Completion handler with result
+    func addCreditCard(ccNumber: String, exp: String, sec: String, iss: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let request = CreateCreditCardRequest(
+            userId: "", // Will be set by NetworkInterface
+            ccNumber: ccNumber,
+            exp: exp,
+            sec: sec,
+            iss: iss
+        )
+        
+        networkInterface.createCreditCard(request) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 

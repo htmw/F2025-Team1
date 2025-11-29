@@ -7,6 +7,92 @@
 
 import SwiftUI
 
+@Observable
+class CreditCardFraudViewModel {
+    var isSending: Bool = false
+    var creditCards: [CreditCard] = []
+    var transactions: [String: CreditCardTransactions] = [:]
+    var isLoading: Bool = false
+    var errorMessage: String?
+    
+    private let repository: Repository
+    
+    init(repository: Repository) {
+        self.repository = repository
+    }
+    
+    func loadUserInformation() {
+        isLoading = true
+        errorMessage = nil
+        
+        repository.getUserInformation { [weak self] result in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.isLoading = false
+
+                switch result {
+                case .success(let user):
+                    self.creditCards = user.creditCards
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+    
+    func loadTransactions() {
+        repository.getUserTransactions { [weak self] result in
+            Task { @MainActor in
+                guard let self = self else { return }
+
+                switch result {
+                case .success(let transactions):
+                    var map: [String: CreditCardTransactions] = [:]
+                    transactions.forEach {
+                        if let ccts = map[$0.ccNumber] {
+                            ccts.append($0)
+                        } else {
+                            let ccts = CreditCardTransactions(ccNumber: $0.ccNumber)
+                            ccts.append($0)
+                            map[$0.ccNumber] = ccts
+                        }
+                    }
+                    
+                    self.transactions = map
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+//        transactions = [
+//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
+//        ]
+    }
+    
+    func addCreditCard(ccNumber: String, exp: String, sec: String, iss: String) {
+        isLoading = true
+        errorMessage = nil
+        
+        repository.addCreditCard(ccNumber: ccNumber, exp: exp, sec: sec, iss: iss) { [weak self] result in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.isLoading = false
+                
+                switch result {
+                case .success:
+                    // Reload user information to get the updated credit cards list
+                    self.loadUserInformation()
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+}
+
 @main
 struct CreditCardFraudApp: App {
     // Wire together the dependencies
@@ -34,8 +120,6 @@ struct CreditCardFraudApp: App {
         WindowGroup {
             LandingPageView()
                 .environment(viewModel)
-//            ContentView()
-//                .environment(viewModel)
         }
     }
 }
