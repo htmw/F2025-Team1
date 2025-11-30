@@ -93,6 +93,7 @@ class CreditCardFraudViewModel {
     }
 }
 
+// Indicates where the app starts
 @main
 struct CreditCardFraudApp: App {
     // Wire together the dependencies
