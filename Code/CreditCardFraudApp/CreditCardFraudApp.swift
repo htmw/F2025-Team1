@@ -64,12 +64,6 @@ class CreditCardFraudViewModel {
                 }
             }
         }
-//        transactions = [
-//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
-//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
-//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
-//            Transaction(creditCardNumber: "8973458973", location: "Blah", city: "Blahblah", state: "NY", date: "39/34/23", time: "NOW"),
-//        ]
     }
     
     func addCreditCard(ccNumber: String, exp: String, sec: String, iss: String) {
@@ -90,6 +84,39 @@ class CreditCardFraudViewModel {
                 }
             }
         }
+    }
+    
+    func updateFraudStatus(_ transaction: Transaction, _ isFraudulent: Bool) {
+        repository.updateTransactionFraudStatus(transaction, isFraudulent: isFraudulent, completion: {[weak self] e in
+            guard let transactionList = self?.transactions.first(where: { $0.key == transaction.ccNumber })?.value else {
+                return
+            }
+            guard let index = transactionList.transactions.firstIndex(where: { $0.id == transaction.id }) else {
+                return
+            }
+            
+            DispatchQueue.main.async {
+                transactionList.transactions[index] = Transaction(
+                    id: transaction.id,
+                    creditCardNumber: transaction.ccNumber,
+                    location: transaction.location,
+                    city: transaction.city,
+                    state: transaction.state,
+                    date: transaction.date,
+                    time: transaction.time,
+                    amount: transaction.amount,
+                    longitude: transaction.longitude,
+                    latitude: transaction.latitude,
+                    userId: transaction.userId,
+                    isFraudulent: isFraudulent
+                )
+                
+                let copy = transactionList.deepCopy()
+                copy.hasFraudulentTransaction = transactionList.transactions.contains(where: { $0.isFraudulent })
+                
+                self?.transactions[transaction.ccNumber] = copy
+            }
+        })
     }
 }
 
