@@ -8,7 +8,7 @@
 import Foundation
 
 
-class Transaction {
+struct Transaction {
     let id: UUID
     let amount: Int
     let longitude: Double
