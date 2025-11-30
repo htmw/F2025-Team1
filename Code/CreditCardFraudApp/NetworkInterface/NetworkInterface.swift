@@ -84,10 +84,9 @@ public struct CreateCreditCardRequest: Codable {
 }
 
 public struct UpdateTransactionFraudStatusRequest: Codable {
-    // Add fields based on API requirements
-    // This is a placeholder - adjust based on actual API needs
-    
-    public init() {}
+    let transactionId: UUID
+    let fraud_flag: Bool
+    let fraud_reason: String?
 }
 
 // MARK: - Response Models

@@ -18,6 +18,10 @@ class CreditCardTransactions {
         self.transactions = transactions
     }
     
+    func deepCopy() -> CreditCardTransactions {
+        return CreditCardTransactions(ccNumber: ccNumber, hasFraudulentTransaction: hasFraudulentTransaction, transactions: transactions)
+    }
+    
     func append(_ transaction: Transaction) {
         transactions.append(transaction)
         hasFraudulentTransaction = transaction.isFraudulent || hasFraudulentTransaction
@@ -28,6 +32,7 @@ class CreditCardTransactions {
 
 
 struct TransactionListView: View {
+    @Environment(CreditCardFraudViewModel.self) var vm
     let ccNumber: String
     let transactions: [Transaction]
     private let posixFormatter = getPosixDateFormatter()
@@ -56,6 +61,23 @@ struct TransactionListView: View {
                             .fontWeight(.bold)
                     }
                     .badge(t.isFraudulent ? Text("!").bold().foregroundStyle(.red) : nil)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        if t.isFraudulent {
+                            Button(action: {
+                                vm.updateFraudStatus(t, false)
+                            }) {
+                                Label("Approve", systemImage: "checkmark")
+                            }
+                            .tint(.green)
+                        } else {
+                            Button(action: {
+                                vm.updateFraudStatus(t, true)
+                            }) {
+                                Label("Deny", systemImage: "exclamationmark")
+                            }
+                            .tint(.red)
+                        }
+                    }
                 }
             }
         }

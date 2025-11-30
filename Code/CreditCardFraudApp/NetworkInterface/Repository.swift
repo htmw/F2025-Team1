@@ -95,5 +95,18 @@ class Repository {
             }
         }
     }
+    
+    func updateTransactionFraudStatus(_ transaction: Transaction, isFraudulent: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
+        let updateTransactionRequest = UpdateTransactionFraudStatusRequest(transactionId: transaction.id, fraud_flag: isFraudulent, fraud_reason: nil)
+        
+        networkInterface.updateTransactionFraudStatus(updateTransactionRequest) { result in
+            if case let Result.failure(error) = result {
+                completion(.failure(error))
+                return
+            } else {
+                completion(.success(()))
+            }
+        }
+    }
 }
 
