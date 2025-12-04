@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-secret, user_id'
 };
 const DEBUG = (Deno.env.get('DEBUG_LOGS') ?? '').toLowerCase() === 'true';
-function json(data, status = 200) {
+function json(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -16,19 +16,19 @@ function json(data, status = 200) {
     }
   });
 }
-const badRequest = (msg)=>json({
-    error: msg
-  }, 400);
-const forbidden = ()=>json({
-    error: 'Forbidden'
-  }, 403);
-const unauthorized = ()=>json({
-    error: 'Unauthorized'
-  }, 401);
-const notFound = (msg = 'Not found')=>json({
-    error: msg
-  }, 404);
-async function readJson(req) {
+const badRequest = (msg: string) => json({
+  error: msg
+}, 400);
+const forbidden = () => json({
+  error: 'Forbidden'
+}, 403);
+const unauthorized = () => json({
+  error: 'Unauthorized'
+}, 401);
+const notFound = (msg = 'Not found') => json({
+  error: msg
+}, 404);
+async function readJson(req: Request): Promise<any | null> {
   try {
     const body = await req.text();
     if (!body) return null;
@@ -37,7 +37,7 @@ async function readJson(req) {
     return null;
   }
 }
-serve(async (req)=>{
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', {
     headers: corsHeaders
   });
@@ -69,8 +69,8 @@ serve(async (req)=>{
     return forbidden();
   }
   // ---- Env & client init ----
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const supabaseUrl = (Deno.env.get('SUPABASE_URL') ?? '').trim();
+  const serviceKey = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim();
   if (DEBUG) console.log('[env]', {
     hasUrl: !!supabaseUrl,
     hasServiceKey: !!serviceKey
@@ -80,6 +80,9 @@ serve(async (req)=>{
       error: 'Server misconfig: missing URL or SERVICE_ROLE key'
     }, 500);
   }
+  // ensure no trailing slash when building admin URL
+  const supabaseUrlNoSlash = supabaseUrl.endsWith('/') ? supabaseUrl.slice(0, -1) : supabaseUrl;
+
   const db = createClient(supabaseUrl, serviceKey, {
     auth: {
       persistSession: false
@@ -87,9 +90,68 @@ serve(async (req)=>{
   });
   try {
     // -------------------------------
+    // POST /signup
+    // Body: { email, password, name? }
+    // Uses admin API via SERVICE_ROLE key to create auth user
+    // -------------------------------
+    if (path === '/signup' && method === 'POST') {
+      const body = await readJson(req);
+      if (!body) return badRequest('Invalid or empty JSON');
+      const { email, password, name } = body;
+      if (!email || !password) return badRequest('Missing email or password');
+      if (name != null && (typeof name !== 'string' || name.trim() === '')) return badRequest('If provided, name must be a non-empty string');
+
+      // Build payload for admin API
+      const payload: any = {
+        email,
+        password,
+        email_confirm: true
+      };
+      if (name != null) {
+        payload.user_metadata = { name: name.trim() };
+      }
+
+      // Call Supabase Admin API directly using service role
+      const adminResp = await fetch(`${supabaseUrlNoSlash}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      // Try parse JSON; if parsing fails, fallback to text
+      let adminData: any = null;
+      try {
+        adminData = await adminResp.clone().json();
+      } catch {
+        try {
+          adminData = await adminResp.clone().text();
+        } catch {
+          adminData = null;
+        }
+      }
+
+      if (!adminResp.ok) {
+        if (DEBUG) console.log('[signup][admin-error]', adminResp.status, adminData);
+        return json({
+          error: adminData ?? { status: adminResp.status }
+        }, adminResp.status === 200 ? 400 : adminResp.status);
+      }
+
+      return json({
+        user: adminData
+      }, 201);
+    }
+
+    // -------------------------------
+    // existing routes below...
+    // (dailyreport, transactions, user, creditcard, etc.)
+    // -------------------------------
     // GET /dailyreport?startTime=<YYYY-MM-DDThh:mm:ssZ>&endTime=<YYYY-MM-DDThh:mm:ssZ>
     // Uses generated column "ts" (timestamptz) for range filtering
-    // -------------------------------
     if (path === '/dailyreport' && method === 'GET') {
       const startISO = url.searchParams.get('startTime');
       const endISO = url.searchParams.get('endTime');
@@ -104,9 +166,9 @@ serve(async (req)=>{
       // Exclude userId & ccNumber; include ts so caller can see exact moment if useful
       const selectCols = 'ts,date,time,longitude,latitude,amount,created_at,fraud_flag,fraud_reason,fraud_checked_at,txn_id';
       const { data, error } = await db.from('Transactions') // case-sensitive quoted identifier
-      .select(selectCols).eq('fraud_flag', true).gte('ts', start.toISOString()).lte('ts', end.toISOString()).order('ts', {
-        ascending: true
-      });
+        .select(selectCols).eq('fraud_flag', true).gte('ts', start.toISOString()).lte('ts', end.toISOString()).order('ts', {
+          ascending: true
+        });
       if (error) {
         if (DEBUG) console.log('[dailyreport][db-error]', error.message);
         return json({
@@ -118,9 +180,7 @@ serve(async (req)=>{
         report: data ?? []
       }, 200);
     }
-    // -------------------------------
     // GET /transactions  (requires header: user_id)
-    // -------------------------------
     if (path === '/transactions' && method === 'GET') {
       const userId = req.headers.get('user_id');
       if (!userId) return forbidden();
@@ -139,10 +199,7 @@ serve(async (req)=>{
         transactions: data ?? []
       }, 200);
     }
-    // -------------------------------
     // POST /transactions
-    // Body: { userId, ccNumber, date?, time?, longitude, latitude, amount, fraud_flag?, fraud_reason? }
-    // -------------------------------
     if (path === '/transactions' && method === 'POST') {
       const body = await readJson(req);
       if (!body) return badRequest('Invalid or empty JSON');
@@ -150,7 +207,7 @@ serve(async (req)=>{
       if (!userId || !ccNumber || longitude == null || latitude == null || amount == null) {
         return badRequest('Missing required fields: userId, ccNumber, longitude, latitude, amount');
       }
-      const insertObj = {
+      const insertObj: any = {
         userId,
         ccNumber,
         longitude,
@@ -180,10 +237,7 @@ serve(async (req)=>{
         transaction: data
       }, 201);
     }
-    // -------------------------------
     // GET /user  (requires header: user_id)
-    // Return: user name + their credit cards
-    // -------------------------------
     if (path === '/user' && method === 'GET') {
       const userId = req.headers.get('user_id');
       if (!userId) return forbidden();
@@ -216,10 +270,7 @@ serve(async (req)=>{
         }
       }, 200);
     }
-    // -------------------------------
     // PUT /transactions
-    // Body: { transactionId: UUID, fraud_flag: boolean, fraud_reason?: string }
-    // -------------------------------
     if (path === '/transactions' && method === 'PUT') {
       const body = await readJson(req);
       if (!body) return badRequest('Invalid or empty JSON');
@@ -227,7 +278,7 @@ serve(async (req)=>{
       if (!transactionId || typeof fraud_flag !== 'boolean') {
         return badRequest('Missing required fields: transactionId (uuid), fraud_flag (boolean)');
       }
-      const patch = {
+      const patch: any = {
         fraud_flag,
         fraud_checked_at: new Date().toISOString()
       };
@@ -247,10 +298,7 @@ serve(async (req)=>{
         transaction: data
       }, 200);
     }
-    // -------------------------------
     // POST /creditcard
-    // Body: { userId, ccNumber, exp, sec, iss }
-    // -------------------------------
     if (path === '/creditcard' && method === 'POST') {
       const body = await readJson(req);
       if (!body) return badRequest('Invalid or empty JSON');
@@ -281,7 +329,7 @@ serve(async (req)=>{
     }
     // Fallback
     return notFound('Route not found');
-  } catch (error) {
+  } catch (error: any) {
     console.error('[edge] unhandled', {
       message: error?.message,
       stack: error?.stack
