@@ -23,13 +23,18 @@ struct LandingPageView: View {
                             .frame(width: 40, height: 40)
                             .foregroundColor(.blue)
                         VStack(alignment: .leading) {
-                            Text("Welcome, David")
+                            Text("Fraud Stopper")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .padding(.horizontal)
+                            
+                            Text("Welcome, David Smith")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                            Text("Your account overview")
+
+                            Text("You can see all card information here")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
+                                .foregroundColor(.gray)                        }
                         Spacer()
                     }
                     .padding(.horizontal)
@@ -77,18 +82,20 @@ struct LandingPageView: View {
                         .padding(.horizontal)
 
                         ForEach(vm.creditCards, id: \.ccNumber) { cc in
-                            CreditCardView( // ✅ Use the display view, not the form
+                            CreditCardView(
                                 color: cc.iss == "VISA" ? .blue : (cc.iss == "MASTERCARD" ? .orange : .brown),
                                 brand: cc.iss,
                                 number: "**** **** **** \(cc.ccNumber.suffix(4))",
                                 exp: cc.exp,
-                                isFraudulent: vm.transactions[cc.ccNumber]?.hasFraudulentTransaction ?? false
+                                isFraudulent: vm.transactions[cc.ccNumber]?.hasFraudulentTransaction ?? false,
+                                balance: cc.balance
                             )
                             .onTapGesture {
                                 navigationPath.append(cc.ccNumber)
                             }
                             .padding(.horizontal)
                         }
+
                     }
 
                     Spacer(minLength: 40)
@@ -112,3 +119,12 @@ struct LandingPageView: View {
     }
 }
 
+extension String {
+    func chunked(by chunkSize: Int) -> [String] {
+        stride(from: 0, to: count, by: chunkSize).map {
+            let start = index(startIndex, offsetBy: $0)
+            let end = index(start, offsetBy: chunkSize, limitedBy: endIndex) ?? endIndex
+            return String(self[start..<end])
+        }
+    }
+}

@@ -12,47 +12,40 @@ struct CreditCardView: View {
     let number: String
     let exp: String
     let isFraudulent: Bool
+    let balance: Double
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            RoundedRectangle(cornerRadius: 16)
-                .fill(color)
-                .frame(height: 110)
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Current Balance")
+                .font(.caption)
+                .foregroundColor(.gray)
 
-            VStack(alignment: .leading) {
-                Text(brand)
-                    .font(.headline)
-                    .foregroundColor(.white)
+            Text("$\(String(format: "%.2f", balance))")
+                .font(.title2)
+                .fontWeight(.bold)
 
-                Spacer()
+            Text(number)
+                .font(.subheadline)
+                .foregroundColor(.gray)
 
-                HStack {
-                    Text(number)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
-
-                    Spacer()
-
-                    Text(exp)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
-                }
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            if isFraudulent {
-                ZStack {
-                    Circle()
-                        .foregroundStyle(.red)
-                        .frame(height: 24)
-                    Text("!")
-                        .bold()
-                        .foregroundStyle(.white)
-                }
-                .offset(x: 6, y: -6)
-            }
+            Text(exp)
+                .font(.subheadline)
+                .foregroundColor(.gray)
         }
-        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
+        .padding()
+        .frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 16).fill(color))
+        .overlay(
+            isFraudulent ?
+            Circle()
+                .fill(Color.red)
+                .frame(width: 24, height: 24)
+                .overlay(Text("!").foregroundColor(.white).bold())
+                .offset(x: 12, y: -12)
+            : nil,
+            alignment: .topTrailing
+        )
+        .shadow(radius: 4)
     }
 }
+
