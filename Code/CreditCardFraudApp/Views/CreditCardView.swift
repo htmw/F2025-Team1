@@ -1,9 +1,3 @@
-//
-//  CreditCardView.swift
-//  CreditCardFraudApp
-//
-//  Created by Xavier Jackson on 11/30/25.
-//
 import SwiftUI
 
 struct CreditCardView: View {
@@ -18,29 +12,38 @@ struct CreditCardView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Current Balance")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white)
 
             Text("$\(String(format: "%.2f", balance))")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(.white)
 
             Text(number)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white)
 
-            Text(exp)
+            Text("Exp: \(exp)")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white)
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: 16).fill(color))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(color)
+        )
         .overlay(
             isFraudulent ?
             Circle()
                 .fill(Color.red)
                 .frame(width: 24, height: 24)
-                .overlay(Text("!").foregroundColor(.white).bold())
+                .overlay(
+                    Text("!")
+                        .foregroundColor(.white)
+                        .font(.caption)
+                        .bold()
+                )
                 .offset(x: 12, y: -12)
             : nil,
             alignment: .topTrailing
@@ -48,4 +51,3 @@ struct CreditCardView: View {
         .shadow(radius: 4)
     }
 }
-
