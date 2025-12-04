@@ -39,7 +39,7 @@ struct LandingPageView: View {
                     }
                     .padding(.horizontal)
 
-                    // Balance Card
+//                    // Balance Card
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Total Balance")
                             .font(.headline)
@@ -88,7 +88,7 @@ struct LandingPageView: View {
                                 number: "**** **** **** \(cc.ccNumber.suffix(4))",
                                 exp: cc.exp,
                                 isFraudulent: vm.transactions[cc.ccNumber]?.hasFraudulentTransaction ?? false,
-                                balance: cc.balance
+                                balance: 100
                             )
                             .onTapGesture {
                                 navigationPath.append(cc.ccNumber)
