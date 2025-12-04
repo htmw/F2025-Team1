@@ -23,6 +23,7 @@ struct LandingPageView: View {
                             .frame(width: 40, height: 40)
                             .foregroundColor(.blue)
                         VStack(alignment: .leading) {
+                            
                             Text("Fraud Stopper")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)

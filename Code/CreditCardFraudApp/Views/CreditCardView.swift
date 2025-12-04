@@ -1,9 +1,3 @@
-//
-//  CreditCardView.swift
-//  CreditCardFraudApp
-//
-//  Created by Xavier Jackson on 11/30/25.
-//
 import SwiftUI
 
 struct CreditCardView: View {
@@ -16,21 +10,34 @@ struct CreditCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Brand logo + title row
+            HStack {
+                brandLogo
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 24)
+                Spacer()
+                Text(brand)
+                    .font(.caption)
+                    .foregroundColor(.white)
+            }
+
             Text("Current Balance")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white)
 
             Text("$\(String(format: "%.2f", balance))")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(.white)
 
             Text(number)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white)
 
-            Text(exp)
+            Text("Exp: \(exp)")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white)
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -47,5 +54,18 @@ struct CreditCardView: View {
         )
         .shadow(radius: 4)
     }
-}
 
+    // MARK: - Brand Logo
+    private var brandLogo: Image {
+        switch brand.uppercased() {
+        case "VISA":
+            return Image("visa_logo")       // Add visa_logo asset in Assets.xcassets
+        case "MASTERCARD":
+            return Image("mastercard_logo") // Add mastercard_logo asset
+        case "AMEX":
+            return Image("amex_logo")       // Add amex_logo asset
+        default:
+            return Image(systemName: "creditcard") // fallback SF Symbol
+        }
+    }
+}
