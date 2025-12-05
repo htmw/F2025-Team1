@@ -12,5 +12,6 @@ struct CreditCard {
     let exp: String
     let iss: String
     let created_at: String
+    let balance: Double
 }
 
