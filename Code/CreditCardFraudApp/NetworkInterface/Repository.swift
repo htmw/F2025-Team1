@@ -29,7 +29,9 @@ class Repository {
                             ccNumber: networkCard.ccNumber,
                             exp: networkCard.exp,
                             iss: networkCard.iss,
-                            created_at: networkCard.created_at
+                            created_at: networkCard.created_at,
+                            balance: 0.0
+                            
                         )
                     }
                 )
