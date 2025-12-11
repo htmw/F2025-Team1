@@ -82,9 +82,9 @@ struct AccountPageView: View {
 
                 ForEach(recent) { tx in
                     VStack(alignment: .leading) {
-                        Text(tx.description)
+                        Text(tx.location)
                             .font(.subheadline)
-                        Text("$\(String(format: "%.2f", tx.amount))")
+                        Text("$\(String(format: "%.2f", Double(tx.amount)))")
                             .font(.headline)
                         Text(tx.date.formatted(date: .abbreviated, time: .shortened))
                             .font(.caption)
