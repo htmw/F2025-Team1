@@ -17,25 +17,23 @@ struct Transaction: Identifiable {
     let city: String
     let state: String
     let date: Date
-    let time: String
     let ccNumber: String
     let userId: String
     var isFraudulent: Bool
     
-    init(id: UUID = UUID(),
-         creditCardNumber: String,
-         location: String,
-         city: String,
-         state: String,
-         date: Date,
-         dateString: String,
-         time: String,
-         timeString: String,
-         amount: Int = Int.random(in: 1...100000),
-         longitude: Double = Double.random(in: -180...180),
-         latitude: Double = Double.random(in: -90...90),
-         userId: String = "67c31a0d-7658-458b-9196-b3133b26cd00",
-         isFraudulent: Bool = false
+    init(
+        id: UUID = UUID(),
+        creditCardNumber: String,
+        location: String,
+        city: String,
+        state: String,
+        dateString: String,
+        timeString: String,
+        amount: Int = Int.random(in: 1...100000),
+        longitude: Double = Double.random(in: -180...180),
+        latitude: Double = Double.random(in: -90...90),
+        userId: String = "67c31a0d-7658-458b-9196-b3133b26cd00",
+        isFraudulent: Bool = false
     ) {
         self.id = id
         self.amount = amount
@@ -46,14 +44,14 @@ struct Transaction: Identifiable {
         self.location = location
         self.city = city
         self.state = state
-        self.time = time
         self.isFraudulent = isFraudulent
         
-        //Convert dateString + timeString into a Date
+        // Convert strings into a Date
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd/yyyy HH:mm" // adjust to your backend format
         self.date = formatter.date(from: "\(dateString) \(timeString)") ?? Date()
     }
 }
+
 
 
