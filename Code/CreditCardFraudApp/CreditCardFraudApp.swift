@@ -87,36 +87,40 @@ class CreditCardFraudViewModel {
     }
     
     func updateFraudStatus(_ transaction: Transaction, _ isFraudulent: Bool) {
-        repository.updateTransactionFraudStatus(transaction, isFraudulent: isFraudulent, completion: {[weak self] e in
-            guard let transactionList = self?.transactions.first(where: { $0.key == transaction.ccNumber })?.value else {
-                return
-            }
-            guard let index = transactionList.transactions.firstIndex(where: { $0.id == transaction.id }) else {
-                return
-            }
-            
-            DispatchQueue.main.async {
-                transactionList.transactions[index] = Transaction(
-                    id: transaction.id,
-                    creditCardNumber: transaction.ccNumber,
-                    location: transaction.location,
-                    city: transaction.city,
-                    state: transaction.state,
-                    date: transaction.date,
-                    time: transaction.time,
-                    amount: transaction.amount,
-                    longitude: transaction.longitude,
-                    latitude: transaction.latitude,
-                    userId: transaction.userId,
-                    isFraudulent: isFraudulent
-                )
+        repository.updateTransactionFraudStatus(
+            transaction,
+            isFraudulent: isFraudulent,
+            completion: { [weak self] result in
+                guard let transactionList = self?.transactions.first(where: { $0.key == transaction.ccNumber })?.value else {
+                    return
+                }
+                guard let index = transactionList.transactions.firstIndex(where: { $0.id == transaction.id }) else {
+                    return
+                }
                 
-                let copy = transactionList.deepCopy()
-                copy.hasFraudulentTransaction = transactionList.transactions.contains(where: { $0.isFraudulent })
-                
-                self?.transactions[transaction.ccNumber] = copy
+                DispatchQueue.main.async {
+                    transactionList.transactions[index] = Transaction(
+                        id: transaction.id,
+                        creditCardNumber: transaction.ccNumber,
+                        location: transaction.location,
+                        city: transaction.city,
+                        state: transaction.state,
+                        dateString: "TODO",   // pass proper string
+                        timeString: "TODO",   // pass proper string
+                        amount: transaction.amount,
+                        longitude: transaction.longitude,
+                        latitude: transaction.latitude,
+                        userId: transaction.userId,
+                        isFraudulent: isFraudulent
+                    )
+                    
+                    let copy = transactionList.deepCopy()
+                    copy.hasFraudulentTransaction = transactionList.transactions.contains(where: { $0.isFraudulent })
+                    
+                    self?.transactions[transaction.ccNumber] = copy
+                }
             }
-        })
+        )
     }
 }
 
