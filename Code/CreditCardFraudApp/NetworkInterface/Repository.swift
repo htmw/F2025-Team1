@@ -29,7 +29,9 @@ class Repository {
                             ccNumber: networkCard.ccNumber,
                             exp: networkCard.exp,
                             iss: networkCard.iss,
-                            created_at: networkCard.created_at
+                            created_at: networkCard.created_at,
+                            balance: 0.0
+                            
                         )
                     }
                 )
@@ -54,14 +56,15 @@ class Repository {
                         location: transactionDetail.locationName,
                         city: transactionDetail.city,
                         state: transactionDetail.state,
-                        date: transactionDetail.date,
-                        time: transactionDetail.time,
+                        dateString: transactionDetail.date,   
+                        timeString: transactionDetail.time,
                         amount: transactionDetail.amount,
                         longitude: transactionDetail.longitude,
                         latitude: transactionDetail.latitude,
                         userId: transactionDetail.userId,
                         isFraudulent: transactionDetail.fraud_flag
                     )
+
                 }
                 completion(.success(transactions))
             case .failure(let error):

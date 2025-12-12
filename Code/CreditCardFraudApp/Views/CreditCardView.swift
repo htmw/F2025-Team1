@@ -64,6 +64,8 @@ struct CreditCardView: View {
             return Image("mastercard_logo") // Add mastercard_logo asset
         case "AMEX":
             return Image("amex_logo")       // Add amex_logo asset
+        case "DISCOVER":
+            return Image("discover_logo")   // Add discover_logo asset
         default:
             return Image(systemName: "creditcard") // fallback SF Symbol
         }

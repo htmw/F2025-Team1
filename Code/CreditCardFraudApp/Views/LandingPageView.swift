@@ -32,15 +32,13 @@ struct LandingPageView: View {
                             Text("Welcome, David Smith")
                                 .font(.title2)
                                 .fontWeight(.bold)
-
+                            
                             Text("You can see all card information here")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)                        }
+                            .foregroundColor(.gray)                        }
                         Spacer()
                     }
                     .padding(.horizontal)
-
-//                    // Balance Card
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Total Balance")
                             .font(.headline)
@@ -48,7 +46,7 @@ struct LandingPageView: View {
                         Text("$4,570.80")
                             .font(.largeTitle)
                             .fontWeight(.bold)
-
+                        
                         ProgressView(value: 0.87) {
                             Text("87% used of $5,000")
                                 .font(.caption)
@@ -59,19 +57,19 @@ struct LandingPageView: View {
                     .padding()
                     .background(RoundedRectangle(cornerRadius: 16).fill(Color(.systemGray6)))
                     .padding(.horizontal)
-
+                    
                     // Recent Transactions
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Recent Transactions")
                             .font(.headline)
                             .padding(.horizontal)
-
-//                        ForEach(vm.recentTransactions.prefix(4), id: \.id) { tx in
-//                            TransactionListView(amount: tx.amount, description: tx.description)
-//                                .padding(.horizontal)
-//                        }
+                        
+                        //                        ForEach(vm.recentTransactions.prefix(4), id: \.id) { tx in
+                        //                            TransactionListView(amount: tx.amount, description: tx.description)
+                        //                                .padding(.horizontal)
+                        //                        }
                     }
-
+                    
                     // Credit Cards Section
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
@@ -81,10 +79,18 @@ struct LandingPageView: View {
                             AddCardButton(show: $isShowingAddCreditCard)
                         }
                         .padding(.horizontal)
-
+                        
                         ForEach(vm.creditCards, id: \.ccNumber) { cc in
                             CreditCardView(
-                                color: cc.iss == "VISA" ? .blue : (cc.iss == "MASTERCARD" ? .orange : .brown),
+                                color: {
+                                    switch cc.iss.uppercased() {
+                                    case "VISA": return .blue
+                                    case "MASTERCARD": return .red
+                                    case "AMEX", "AMERICAN EXPRESS": return .purple // ✅ Amex styling
+                                    case "DISCOVER": return .orange
+                                    default: return .brown
+                                    }
+                                }(),
                                 brand: cc.iss,
                                 number: "**** **** **** \(cc.ccNumber.suffix(4))",
                                 exp: cc.exp,
@@ -96,36 +102,35 @@ struct LandingPageView: View {
                             }
                             .padding(.horizontal)
                         }
-
+                        
+                        Spacer(minLength: 40)
                     }
-
-                    Spacer(minLength: 40)
+                }
+                .sheet(isPresented: $isShowingAddCreditCard) {
+                    AddCreditCardView(vm: vm, show: $isShowingAddCreditCard)
+                        .presentationDetents([.medium])
+                }
+                .navigationDestination(for: String.self) { ccNumber in
+                    TransactionListView(
+                        ccNumber: ccNumber,
+                        transactions: vm.transactions[ccNumber, default: CreditCardTransactions(ccNumber: ccNumber)].transactions
+                    )
                 }
             }
-            .sheet(isPresented: $isShowingAddCreditCard) {
-                AddCreditCardView(vm: vm, show: $isShowingAddCreditCard)
-                    .presentationDetents([.medium])
+            .task {
+                vm.loadUserInformation()
+                vm.loadTransactions()
             }
-            .navigationDestination(for: String.self) { ccNumber in
-                TransactionListView(
-                    ccNumber: ccNumber,
-                    transactions: vm.transactions[ccNumber, default: CreditCardTransactions(ccNumber: ccNumber)].transactions
-                )
-            }
-        }
-        .task {
-            vm.loadUserInformation()
-            vm.loadTransactions()
         }
     }
 }
 
 extension String {
-    func chunked(by chunkSize: Int) -> [String] {
-        stride(from: 0, to: count, by: chunkSize).map {
-            let start = index(startIndex, offsetBy: $0)
-            let end = index(start, offsetBy: chunkSize, limitedBy: endIndex) ?? endIndex
-            return String(self[start..<end])
+        func chunked(by chunkSize: Int) -> [String] {
+            stride(from: 0, to: count, by: chunkSize).map {
+                let start = index(startIndex, offsetBy: $0)
+                let end = index(start, offsetBy: chunkSize, limitedBy: endIndex) ?? endIndex
+                return String(self[start..<end])
+            }
         }
     }
-}
