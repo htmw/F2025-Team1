@@ -52,31 +52,21 @@ struct TransactionListView: View {
                     HStack {
                         VStack(alignment: .leading) {
                             Text(t.location.isEmpty ? "---" : t.location)
-                            Text("\(t.city.isEmpty ? "Unknown City" : t.city), \(t.state.isEmpty ? "Unknown State" : t.state)")
-                            Text("\(t.date) \(formatTime(t.time) ?? "---")")
+                            let cityText = t.city.isEmpty ? "Unknown City" : t.city
+                            let stateText = t.state.isEmpty ? "Unknown State" : t.state
+                            Text("\(cityText), \(stateText)")
+                            Text(displayFormatter.string(from: t.date))
                         }
                         Spacer()
-                        Text("$\(t.amount/100).\(String(format: "%02d", t.amount % 100))")
+                        let dollars = t.amount / 100
+                        let cents = String(format: "%02d", t.amount % 100)
+                        Text("$\(dollars).\(cents)")
                             .font(.title2)
                             .fontWeight(.bold)
                     }
-                    .badge(t.isFraudulent ? Text("!").bold().foregroundStyle(.red) : nil)
+                    .badge(fraudBadge(isFraudulent: t.isFraudulent))
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        if t.isFraudulent {
-                            Button(action: {
-                                vm.updateFraudStatus(t, false)
-                            }) {
-                                Label("Approve", systemImage: "checkmark")
-                            }
-                            .tint(.green)
-                        } else {
-                            Button(action: {
-                                vm.updateFraudStatus(t, true)
-                            }) {
-                                Label("Deny", systemImage: "exclamationmark")
-                            }
-                            .tint(.red)
-                        }
+                        transactionSwipeActions(t)
                     }
                 }
             }
@@ -113,6 +103,33 @@ struct TransactionListView: View {
     private func formatTime(_ raw: String) -> String? {
         guard let date = posixFormatter.date(from: raw) else { return nil }
         return displayFormatter.string(from: date)
+    }
+
+    @ViewBuilder
+    private func transactionSwipeActions(_ t: Transaction) -> some View {
+        if t.isFraudulent {
+            Button(action: {
+                vm.updateFraudStatus(t, false)
+            }) {
+                Label("Approve", systemImage: "checkmark")
+            }
+            .tint(.green)
+        } else {
+            Button(action: {
+                vm.updateFraudStatus(t, true)
+            }) {
+                Label("Deny", systemImage: "exclamationmark")
+            }
+            .tint(.red)
+        }
+    }
+
+    private func fraudBadge(isFraudulent: Bool) -> Text? {
+        if isFraudulent {
+            return Text("!").bold().foregroundStyle(.red)
+        } else {
+            return nil
+        }
     }
 
 }
