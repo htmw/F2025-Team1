@@ -26,6 +26,7 @@ struct CheckboxToggleStyle: ToggleStyle {
 }
 
 struct SignUpView: View {
+    @Environment(CreditCardFraudViewModel.self) var vm
 
     // MARK: - Form State
     @State private var fullName: String = ""
@@ -141,24 +142,65 @@ struct SignUpView: View {
                     }
                     .toggleStyle(CheckboxToggleStyle())
                     .padding(.top, 4)
+                    
+                    // Error message display
+                    if let errorMessage = vm.errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundColor(.red)
+                            .padding(.top, 4)
+                    }
 
                     // Sign Up button
                     Button {
-                        // Later you can add validation + Supabase sign-up here.
-                        // For now we just call the success closure so app can navigate.
-                        onSignUpSuccess?()
+                        // Validate passwords match
+                        guard password == confirmPassword else {
+                            vm.errorMessage = "Passwords do not match"
+                            return
+                        }
+                        
+                        // Validate email is not empty
+                        guard !email.isEmpty else {
+                            vm.errorMessage = "Email is required"
+                            return
+                        }
+                        
+                        // Validate password is not empty
+                        guard !password.isEmpty else {
+                            vm.errorMessage = "Password is required"
+                            return
+                        }
+                        
+                        // Call the signup function
+                        vm.signup(email: email, password: password) { result in
+                            switch result {
+                            case .success:
+                                // Signup successful, call the success callback
+                                onSignUpSuccess?()
+                            case .failure:
+                                // Error is already set in vm.errorMessage
+                                break
+                            }
+                        }
                     } label: {
-                        Text("Sign Up")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+                        HStack {
+                            if vm.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            }
+                            Text(vm.isLoading ? "Signing Up..." : "Sign Up")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                     }
                     .background(agreeToTerms ? Color.blue : Color.blue.opacity(0.5))
                     .cornerRadius(10)
                     .shadow(color: .black.opacity(0.15), radius: 4, y: 3)
                     .padding(.top, 4)
-                    .disabled(!agreeToTerms) // must tick the checkbox
+                    .disabled(!agreeToTerms || vm.isLoading) // must tick the checkbox and not be loading
 
                     // "Already have an account? Log in"
                     HStack(spacing: 4) {

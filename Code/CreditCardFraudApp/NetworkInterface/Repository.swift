@@ -108,5 +108,23 @@ class Repository {
             }
         }
     }
+    
+    /// Sign Up
+    /// - Parameters:
+    ///   - email: User email address
+    ///   - password: User password
+    ///   - completion: Completion handler with result
+    func signup(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let request = SignupRequest(email: email, password: password)
+        
+        networkInterface.signup(request) { result in
+            switch result {
+            case .success:
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 

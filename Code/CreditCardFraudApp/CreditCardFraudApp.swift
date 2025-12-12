@@ -118,6 +118,27 @@ class CreditCardFraudViewModel {
             }
         })
     }
+    
+    func signup(email: String, password: String, completion: ((Result<Void, Error>) -> Void)? = nil) {
+        isLoading = true
+        errorMessage = nil
+        
+        repository.signup(email: email, password: password) { [weak self] result in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.isLoading = false
+                
+                switch result {
+                case .success:
+                    // Signup successful
+                    completion?(.success(()))
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                    completion?(.failure(error))
+                }
+            }
+        }
+    }
 }
 
 // Indicates where the app starts
@@ -146,7 +167,8 @@ struct CreditCardFraudApp: App {
     
     var body: some Scene {
         WindowGroup {
-            LandingPageView()
+            // LandingPageView()
+            SignUpView()
                 .environment(viewModel)
         }
     }

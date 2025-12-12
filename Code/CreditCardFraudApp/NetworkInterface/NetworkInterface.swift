@@ -45,6 +45,12 @@ public protocol NetworkInterface {
     ///   - request: The credit card request data (userId will be automatically included from init)
     ///   - completion: Completion handler with result
     func createCreditCard(_ request: CreateCreditCardRequest, completion: @escaping (Result<Data, Error>) -> Void)
+    
+    /// Sign Up
+    /// - Parameters:
+    ///   - request: The signup request data containing email and password
+    ///   - completion: Completion handler with result
+    func signup(_ request: SignupRequest, completion: @escaping (Result<Data, Error>) -> Void)
 }
 
 // MARK: - API Models
@@ -87,6 +93,16 @@ public struct UpdateTransactionFraudStatusRequest: Codable {
     let transactionId: UUID
     let fraud_flag: Bool
     let fraud_reason: String?
+}
+
+public struct SignupRequest: Codable {
+    public let email: String
+    public let password: String
+    
+    public init(email: String, password: String) {
+        self.email = email
+        self.password = password
+    }
 }
 
 // MARK: - Response Models
@@ -442,6 +458,45 @@ class NetworkInterfaceImpl: NetworkInterface {
         
         do {
             urlRequest.httpBody = try JSONEncoder().encode(requestWithUserId)
+        } catch {
+            completion(.failure(error))
+            return
+        }
+        
+        session.dataTask(with: urlRequest) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode),
+                  let data = data else {
+                completion(.failure(URLError(.badServerResponse)))
+                return
+            }
+            
+            completion(.success(data))
+        }.resume()
+    }
+    
+    /// Sign Up
+    /// - Parameters:
+    ///   - request: The signup request data containing email and password
+    ///   - completion: Completion handler with result
+    func signup(_ request: SignupRequest, completion: @escaping (Result<Data, Error>) -> Void) {
+        guard let url = URL(string: "\(baseURL)/functions/v1/app-middleware/signup") else {
+            completion(.failure(URLError(.badURL)))
+            return
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue(adminSecret, forHTTPHeaderField: "x-admin-secret")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            urlRequest.httpBody = try JSONEncoder().encode(request)
         } catch {
             completion(.failure(error))
             return
