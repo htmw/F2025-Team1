@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Pushy
 
 @Observable
 class CreditCardFraudViewModel {
@@ -123,7 +124,7 @@ class CreditCardFraudViewModel {
         )
     }
     
-    func signup(email: String, password: String, completion: ((Result<Void, Error>) -> Void)? = nil) {
+    func signup(email: String, password: String, completion: ((Swift.Result<Void, Error>) -> Void)? = nil) {
         isLoading = true
         errorMessage = nil
         
@@ -149,6 +150,7 @@ class CreditCardFraudViewModel {
 @main
 struct CreditCardFraudApp: App {
     // Wire together the dependencies
+    @UIApplicationDelegateAdaptor(CreditCardFraudAppDelegate.self) var appDelegate
     private let networkInterface: NetworkInterface
     private let repository: Repository
     private let viewModel: CreditCardFraudViewModel
@@ -171,9 +173,56 @@ struct CreditCardFraudApp: App {
     
     var body: some Scene {
         WindowGroup {
-            // LandingPageView()
-            SignUpView()
+            LandingPageView()
+//            SignUpView()
                 .environment(viewModel)
         }
+    }
+}
+
+
+class CreditCardFraudAppDelegate: NSObject, UIApplicationDelegate {
+    
+    var window: UIWindow?
+    
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        let pushy = Pushy(application)
+        
+        pushy.register({ (error, deviceToken) in
+            // Handle registration errors
+            if error != nil {
+                return print ("Registration failed: \(error!.localizedDescription)")
+            }
+            
+            // Print device token to console
+            print("Pushy device token: \(deviceToken)")
+            
+            // Persist the token locally and send it to your backend later
+            UserDefaults.standard.set(deviceToken, forKey: "pushyToken")
+        })
+        
+        // Enable in-app notification banners (iOS 10+)
+        pushy.toggleInAppBanner(true)
+
+        // Handle incoming notifications
+        pushy.setNotificationHandler({ (data, completionHandler) in
+            // Print notification payload
+            print("Received notification: \(data)")
+            
+            // Show an alert dialog
+            let alert = UIAlertController(title: "Incoming Notification", message: data["message"] as? String, preferredStyle: UIAlertController.Style.alert)
+            alert.addAction(UIAlertAction(title: "OK", style: UIAlertAction.Style.default, handler: nil))
+            self.window?.rootViewController?.present(alert, animated: true, completion: nil)
+            
+            // Reset iOS badge number (and clear all app notifications)
+            UIApplication.shared.applicationIconBadgeNumber = 0
+            
+            // Call this completion handler when you finish processing
+            // the notification (after any asynchronous operations, if applicable)
+            completionHandler(UIBackgroundFetchResult.newData)
+        })
+        
+        return true
     }
 }
