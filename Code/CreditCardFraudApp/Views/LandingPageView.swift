@@ -37,6 +37,11 @@ struct LandingPageView: View {
                                 .font(.subheadline)
                             .foregroundColor(.gray)                        }
                         Spacer()
+                        
+                        NavigationLink(value: "reports") {
+                            Label("Reports", systemImage: "doc.text.fill")
+                                .labelStyle(.iconOnly)
+                        }
                     }
                     .padding(.horizontal)
                     VStack(alignment: .leading, spacing: 12) {
@@ -110,16 +115,31 @@ struct LandingPageView: View {
                     AddCreditCardView(vm: vm, show: $isShowingAddCreditCard)
                         .presentationDetents([.medium])
                 }
-                .navigationDestination(for: String.self) { ccNumber in
-                    TransactionListView(
-                        ccNumber: ccNumber,
-                        transactions: vm.transactions[ccNumber, default: CreditCardTransactions(ccNumber: ccNumber)].transactions
-                    )
+                .navigationDestination(for: String.self) { destination in
+                    if destination == "reports" {
+                        ReportsView(isAdmin: true)
+                    } else {
+                        TransactionListView(
+                            ccNumber: destination,
+                            transactions: vm.transactions[destination, default: CreditCardTransactions(ccNumber: destination)].transactions
+                        )
+                    }
                 }
             }
             .task {
                 vm.loadUserInformation()
                 vm.loadTransactions()
+            }
+            .overlay {
+                if vm.isLoading {
+                    ProgressView("Loading...")
+                } else if let errorMessage = vm.errorMessage {
+                    Text("Error: \(errorMessage)")
+                        .foregroundStyle(.red)
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(10)
+                }
             }
         }
     }

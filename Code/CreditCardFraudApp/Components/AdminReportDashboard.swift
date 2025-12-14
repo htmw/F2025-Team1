@@ -10,16 +10,42 @@ import SwiftUI
 struct AdminReportDashboard: View {
     @Environment(CreditCardFraudViewModel.self) var vm
 
+    private var allTransactions: [Transaction] {
+        vm.transactions.values.flatMap { $0.transactions }
+    }
+    
+    private var fraudulentTransactions: [Transaction] {
+        allTransactions.filter { $0.isFraudulent }
+    }
+    
+    private var totalTransactions: Int {
+        allTransactions.count
+    }
+    
+    private var flaggedCount: Int {
+        fraudulentTransactions.count
+    }
+    
+    private var confirmedCount: Int {
+        // Confirmed fraud is the same as flagged (manually confirmed via the app)
+        flaggedCount
+    }
+    
+    private var lossPrevented: Double {
+        // Calculate total amount from fraudulent transactions (amount is in cents)
+        Double(fraudulentTransactions.reduce(0) { $0 + $1.amount }) / 100.0
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             ReportMetricsView(
-                total: vm.transactions.values.flatMap { $0.transactions }.count,
-                flagged: vm.transactions.values.flatMap { $0.transactions }.filter { $0.isFraudulent }.count,
-                confirmed: 27,
-                lossPrevented: 530.0
+                total: totalTransactions,
+                flagged: flaggedCount,
+                confirmed: confirmedCount,
+                lossPrevented: lossPrevented
             )
-            FraudBarChart(transactions: vm.transactions.values.flatMap { $0.transactions })
-            HighRiskTransactionList(transactions: vm.transactions.values.flatMap { $0.transactions }.filter { $0.isFraudulent })
+            FraudBarChart(transactions: allTransactions)
+            HighRiskTransactionList(transactions: fraudulentTransactions)
         }
     }
 }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Pushy
+import UserNotifications
 
 @Observable
 class CreditCardFraudViewModel {
@@ -92,33 +93,52 @@ class CreditCardFraudViewModel {
             transaction,
             isFraudulent: isFraudulent,
             completion: { [weak self] result in
-                guard let transactionList = self?.transactions.first(where: { $0.key == transaction.ccNumber })?.value else {
-                    return
-                }
-                guard let index = transactionList.transactions.firstIndex(where: { $0.id == transaction.id }) else {
-                    return
-                }
-                
-                DispatchQueue.main.async {
-                    transactionList.transactions[index] = Transaction(
-                        id: transaction.id,
-                        creditCardNumber: transaction.ccNumber,
-                        location: transaction.location,
-                        city: transaction.city,
-                        state: transaction.state,
-                        dateString: "TODO",   // pass proper string
-                        timeString: "TODO",   // pass proper string
-                        amount: transaction.amount,
-                        longitude: transaction.longitude,
-                        latitude: transaction.latitude,
-                        userId: transaction.userId,
-                        isFraudulent: isFraudulent
-                    )
+                guard let self = self else { return }
+
+                switch result {
+                case .success:
+                    let creditCardTransactions = self.transactions.first(where: { $0.key == transaction.ccNumber })
+                    guard let transactionList = creditCardTransactions?.value else {
+                        return
+                    }
+                    let transactionIndex = transactionList.transactions.firstIndex(where: { $0.id == transaction.id })
+                    guard let index = transactionIndex else {
+                        return
+                    }
                     
-                    let copy = transactionList.deepCopy()
-                    copy.hasFraudulentTransaction = transactionList.transactions.contains(where: { $0.isFraudulent })
-                    
-                    self?.transactions[transaction.ccNumber] = copy
+                    Task { @MainActor in
+                        let dateFormatter = DateFormatter()
+                        dateFormatter.dateFormat = "MM/dd/yyyy"
+                        let dateString = dateFormatter.string(from: transaction.date)
+                        
+                        let timeFormatter = DateFormatter()
+                        timeFormatter.dateFormat = "HH:mm"
+                        let timeString = timeFormatter.string(from: transaction.date)
+                        
+                        let updatedTransaction = Transaction(
+                            id: transaction.id,
+                            creditCardNumber: transaction.ccNumber,
+                            location: transaction.location,
+                            city: transaction.city,
+                            state: transaction.state,
+                            dateString: dateString,
+                            timeString: timeString,
+                            amount: transaction.amount,
+                            longitude: transaction.longitude,
+                            latitude: transaction.latitude,
+                            userId: transaction.userId,
+                            isFraudulent: isFraudulent
+                        )
+                        transactionList.transactions[index] = updatedTransaction
+                        
+                        let copy = transactionList.deepCopy()
+                        copy.hasFraudulentTransaction = transactionList.transactions.contains(where: { $0.isFraudulent })
+                        
+                        self.transactions[transaction.ccNumber] = copy
+                    }
+                case .failure(let error):
+                    // Handle error if necessary, e.g., set errorMessage
+                    self.errorMessage = error.localizedDescription
                 }
             }
         )
@@ -173,10 +193,10 @@ struct CreditCardFraudApp: App {
     
     var body: some Scene {
         WindowGroup {
-//            LandingPageView()
+            LandingPageView()
 //            SignUpView()
 //            AccountView()
-            ReportsView(isAdmin: true)
+//            ReportsView(isAdmin: true)
                 .environment(viewModel)
         }
     }
@@ -218,7 +238,11 @@ class CreditCardFraudAppDelegate: NSObject, UIApplicationDelegate {
             self.window?.rootViewController?.present(alert, animated: true, completion: nil)
             
             // Reset iOS badge number (and clear all app notifications)
-            UIApplication.shared.applicationIconBadgeNumber = 0
+            UNUserNotificationCenter.current().setBadgeCount(0) { error in
+                if let error = error {
+                    print("Error setting badge count: \(error.localizedDescription)")
+                }
+            }
             
             // Call this completion handler when you finish processing
             // the notification (after any asynchronous operations, if applicable)
@@ -228,3 +252,4 @@ class CreditCardFraudAppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 }
+

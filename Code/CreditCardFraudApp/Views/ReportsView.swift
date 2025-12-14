@@ -12,25 +12,34 @@ struct ReportsView: View {
     let isAdmin: Bool
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Text("Fraud Report")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.top)
+        VStack(spacing: 16) {
+            Text("Fraud Report")
+                .font(.largeTitle)
+                .bold()
+                .padding(.top)
 
-                ReportFilterBar()
+            ReportFilterBar()
 
-                if isAdmin {
-                    AdminReportDashboard()
-                } else {
-                    UserReportDashboard()
-                }
-
-                Spacer()
+            if isAdmin {
+                AdminReportDashboard()
+            } else {
+                UserReportDashboard()
             }
-            .padding()
-            .navigationTitle("Reports")
+
+            Spacer()
+        }
+        .padding()
+        .navigationTitle("Reports")
+        .overlay {
+            if vm.isLoading {
+                ProgressView("Loading...")
+            } else if let errorMessage = vm.errorMessage {
+                Text("Error: \(errorMessage)")
+                    .foregroundStyle(.red)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(10)
+            }
         }
     }
 }

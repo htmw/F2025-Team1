@@ -46,31 +46,24 @@ struct TransactionListView: View {
                 .bold()
                 .padding(.horizontal)
             
-            List {
-                
-                ForEach(transactions, id: \.id) { t in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(t.location.isEmpty ? "---" : t.location)
-                            let cityText = t.city.isEmpty ? "Unknown City" : t.city
-                            let stateText = t.state.isEmpty ? "Unknown State" : t.state
-                            Text("\(cityText), \(stateText)")
-                            Text(displayFormatter.string(from: t.date))
-                        }
-                        Spacer()
-                        let dollars = t.amount / 100
-                        let cents = String(format: "%02d", t.amount % 100)
-                        Text("$\(dollars).\(cents)")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                    }
-                    .badge(fraudBadge(isFraudulent: t.isFraudulent))
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        transactionSwipeActions(t)
+            if transactions.isEmpty {
+                VStack {
+                    Spacer()
+                    Text("No transactions found")
+                        .foregroundColor(.gray)
+                        .font(.headline)
+                    Spacer()
+                }
+            } else {
+                List {
+                    ForEach(transactions, id: \.id) { t in
+                        TransactionRowView(transaction: t, displayFormatter: displayFormatter)
                     }
                 }
             }
         }
+        .navigationTitle("Transactions")
+        .navigationBarTitleDisplayMode(.inline)
 //        .alert("Error", isPresented: .constant(vm.errorMessage != nil)) {
 //            Button("OK") {
 //                vm.errorMessage = nil
@@ -104,7 +97,55 @@ struct TransactionListView: View {
         guard let date = posixFormatter.date(from: raw) else { return nil }
         return displayFormatter.string(from: date)
     }
+}
 
+struct TransactionRowView: View {
+    let transaction: Transaction
+    let displayFormatter: DateFormatter
+    @Environment(CreditCardFraudViewModel.self) var vm
+    
+    private var cityText: String {
+        transaction.city.isEmpty ? "Unknown City" : transaction.city
+    }
+    
+    private var stateText: String {
+        transaction.state.isEmpty ? "Unknown State" : transaction.state
+    }
+    
+    private var dollars: Int {
+        transaction.amount / 100
+    }
+    
+    private var cents: String {
+        String(format: "%02d", transaction.amount % 100)
+    }
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                Text(transaction.location.isEmpty ? "---" : transaction.location)
+                Text("\(cityText), \(stateText)")
+                Text(displayFormatter.string(from: transaction.date))
+            }
+            Spacer()
+            Text("$\(dollars).\(cents)")
+                .font(.title2)
+                .fontWeight(.bold)
+        }
+        .badge(fraudBadge(isFraudulent: transaction.isFraudulent))
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            transactionSwipeActions(transaction)
+        }
+    }
+    
+    private func fraudBadge(isFraudulent: Bool) -> Text? {
+        if isFraudulent {
+            return Text("!").bold().foregroundStyle(.red)
+        } else {
+            return nil
+        }
+    }
+    
     @ViewBuilder
     private func transactionSwipeActions(_ t: Transaction) -> some View {
         if t.isFraudulent {
@@ -123,15 +164,6 @@ struct TransactionListView: View {
             .tint(.red)
         }
     }
-
-    private func fraudBadge(isFraudulent: Bool) -> Text? {
-        if isFraudulent {
-            return Text("!").bold().foregroundStyle(.red)
-        } else {
-            return nil
-        }
-    }
-
 }
 
 // #Preview {
