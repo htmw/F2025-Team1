@@ -8,7 +8,30 @@
 import SwiftUI
 
 struct ReportsView: View {
+    let vm: CreditCardFraudViewModel
+    let isAdmin: Bool
+
     var body: some View {
-        Text("Reports go here")
+        NavigationStack {
+            VStack(spacing: 16) {
+                Text("Fraud Report")
+                    .font(.largeTitle)
+                    .bold()
+                    .padding(.top)
+
+                ReportFilterBar()
+
+                if isAdmin {
+                    AdminReportDashboard(vm: vm)
+                } else {
+                    UserReportDashboard(vm: vm)
+                }
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Reports")
+        }
     }
 }
+
