@@ -16,12 +16,13 @@ struct ReportMetricsView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                MetricBox(title: "Total Transactions", value: "(total)", subtitle: "+4.3% vs last month")
-                MetricBox(title: "Flagged as Fraud", value: "(flagged)", subtitle: "(Double(flagged)/Double(total)*100, specifier: \("%.1f"))% of total")
+                MetricBox(title: "Total Transactions", value: "\(total)", subtitle: "+4.3% vs last month")
+                
+                MetricBox(title: "Flagged as Fraud", value: "\(flagged)", subtitle: String(format: "%.1f", Double(flagged)/Double(total) * 100))
             }
             HStack {
-                MetricBox(title: "Confirmed Fraud", value: "(confirmed)", subtitle: "(Double(confirmed)/Double(flagged)*100, specifier: \("%.1f"))% of flagged")
-                MetricBox(title: "Loss Prevented", value: "$(lossPrevented, specifier: \("%.2f"))", subtitle: "")
+                MetricBox(title: "Confirmed Fraud", value: "\(confirmed)", subtitle: String(format: "%.1f",Double(confirmed)/Double(flagged) * 100))
+                MetricBox(title: "Loss Prevented", value: String(format: "%.2f", lossPrevented), subtitle: "")
             }
         }
     }

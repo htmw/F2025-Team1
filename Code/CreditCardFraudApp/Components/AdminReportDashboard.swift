@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AdminReportDashboard: View {
-    let vm: CreditCardFraudViewModel
+    @Environment(CreditCardFraudViewModel.self) var vm
 
     var body: some View {
         VStack(spacing: 16) {

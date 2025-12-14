@@ -173,8 +173,10 @@ struct CreditCardFraudApp: App {
     
     var body: some Scene {
         WindowGroup {
-            LandingPageView()
+//            LandingPageView()
 //            SignUpView()
+//            AccountView()
+            ReportsView(isAdmin: true)
                 .environment(viewModel)
         }
     }

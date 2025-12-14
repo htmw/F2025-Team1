@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AccountPageView: View { @Environment(CreditCardFraudViewModel.self) var vm
+struct AccountView: View { @Environment(CreditCardFraudViewModel.self) var vm
     @State private var isShowingReports = false
     
     var body: some View {
@@ -41,7 +41,7 @@ struct AccountPageView: View { @Environment(CreditCardFraudViewModel.self) var v
             
             // Cards and Accounts
             VStack(alignment: .leading, spacing: 12) {
-                Text("Cards and Accounts ((vm.creditCards.count))")
+                Text("Cards and Accounts \(vm.creditCards.count)")
                     .font(.headline)
                     .padding(.horizontal)
                 
@@ -99,7 +99,7 @@ struct AccountPageView: View { @Environment(CreditCardFraudViewModel.self) var v
             Spacer()
         }
         .sheet(isPresented: $isShowingReports) {
-            ReportsView(vm: vm, isAdmin: false)
+            ReportsView(isAdmin: false)
         }
     }
     

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ReportsView: View {
-    let vm: CreditCardFraudViewModel
+    @Environment(CreditCardFraudViewModel.self) var vm
     let isAdmin: Bool
 
     var body: some View {
@@ -22,9 +22,9 @@ struct ReportsView: View {
                 ReportFilterBar()
 
                 if isAdmin {
-                    AdminReportDashboard(vm: vm)
+                    AdminReportDashboard()
                 } else {
-                    UserReportDashboard(vm: vm)
+                    UserReportDashboard()
                 }
 
                 Spacer()
