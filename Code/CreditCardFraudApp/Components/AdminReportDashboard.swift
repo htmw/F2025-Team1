@@ -45,7 +45,7 @@ struct AdminReportDashboard: View {
                 lossPrevented: lossPrevented
             )
             FraudBarChart(transactions: allTransactions)
-            HighRiskTransactionList(transactions: fraudulentTransactions)
+//            HighRiskTransactionList(transactions: fraudulentTransactions)
         }
     }
 }
