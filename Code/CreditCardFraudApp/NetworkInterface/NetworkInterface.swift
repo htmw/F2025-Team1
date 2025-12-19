@@ -51,6 +51,23 @@ public protocol NetworkInterface {
     ///   - request: The signup request data containing email and password
     ///   - completion: Completion handler with result
     func signup(_ request: SignupRequest, completion: @escaping (Result<Data, Error>) -> Void)
+
+    /// Login
+    /// - Parameters:
+    ///   - email: User email address
+    ///   - password: User password
+    ///   - completion: Completion handler with result (raw data)
+    func login(email: String, password: String, completion: @escaping (Result<Data, Error>) -> Void)
+
+    /// Register Push Notification Token
+    /// - Parameters:
+    ///   - token: Push notification token (e.g. Pushy/APNS token)
+    ///   - completion: Completion handler with result (raw data)
+    func registerPushNotificationToken(token: String, completion: @escaping (Result<Data, Error>) -> Void)
+    
+    /// Update the active user id used for authenticated user-scoped requests.
+    /// - Parameter userId: The new user id to use.
+    func setUserId(_ userId: String)
 }
 
 // MARK: - API Models
@@ -175,7 +192,7 @@ public struct TransactionsResponse: Codable {
 class NetworkInterfaceImpl: NetworkInterface {
     private let baseURL: String
     private let adminSecret: String
-    private let userId: String
+    private var userId: String
     private let session: URLSession
     
     init(baseURL: String, adminSecret: String, userId: String, session: URLSession = .shared) {
@@ -183,6 +200,10 @@ class NetworkInterfaceImpl: NetworkInterface {
         self.adminSecret = adminSecret
         self.userId = userId
         self.session = session
+    }
+    
+    func setUserId(_ userId: String) {
+        self.userId = userId
     }
     
     // MARK: - Protocol Implementation
@@ -497,6 +518,106 @@ class NetworkInterfaceImpl: NetworkInterface {
         
         do {
             urlRequest.httpBody = try JSONEncoder().encode(request)
+        } catch {
+            completion(.failure(error))
+            return
+        }
+        
+        session.dataTask(with: urlRequest) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode),
+                  let data = data else {
+                completion(.failure(URLError(.badServerResponse)))
+                return
+            }
+            
+            completion(.success(data))
+        }.resume()
+    }
+
+    /// Login (GET /login?email=<email>&password=<password>)
+    /// - Parameters:
+    ///   - email: User email address
+    ///   - password: User password
+    ///   - completion: Completion handler with result (raw data)
+    func login(email: String, password: String, completion: @escaping (Result<Data, Error>) -> Void) {
+        var components = URLComponents(string: "\(baseURL)/functions/v1/app-middleware/login")
+        
+        // Important: Supabase Edge (Deno/WHATWG URLSearchParams) decodes '+' as a space in query params.
+        // URLQueryItem may leave '+' unescaped, so we force percent-encoding here to preserve literal '+'.
+        var queryAllowed = CharacterSet.urlQueryAllowed
+        queryAllowed.remove(charactersIn: "+")
+        
+        guard
+            let encodedEmail = email.addingPercentEncoding(withAllowedCharacters: queryAllowed),
+            let encodedPassword = password.addingPercentEncoding(withAllowedCharacters: queryAllowed)
+        else {
+            completion(.failure(URLError(.badURL)))
+            return
+        }
+        
+        components?.percentEncodedQuery = "email=\(encodedEmail)&password=\(encodedPassword)"
+        
+        guard let url = components?.url else {
+            completion(.failure(URLError(.badURL)))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue(adminSecret, forHTTPHeaderField: "x-admin-secret")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 60
+        
+        session.dataTask(with: request) { data, response, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode),
+                  let data = data else {
+                completion(.failure(URLError(.badServerResponse)))
+                return
+            }
+            
+            completion(.success(data))
+        }.resume()
+    }
+
+    /// Register Push Notification Token (POST /pns)
+    /// - Parameters:
+    ///   - token: Push notification token
+    ///   - completion: Completion handler with result (raw data)
+    func registerPushNotificationToken(token: String, completion: @escaping (Result<Data, Error>) -> Void) {
+        // Backend route is /pns (note: if you see /psn elsewhere, that's a typo)
+        guard let url = URL(string: "\(baseURL)/functions/v1/app-middleware/pns") else {
+            completion(.failure(URLError(.badURL)))
+            return
+        }
+        
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.cachePolicy = .reloadIgnoringLocalCacheData
+        urlRequest.setValue(adminSecret, forHTTPHeaderField: "x-admin-secret")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Accept")
+        urlRequest.timeoutInterval = 60
+        
+        let body: [String: Any] = [
+            "user_id": userId,
+            "token": token
+        ]
+        
+        do {
+            urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
         } catch {
             completion(.failure(error))
             return

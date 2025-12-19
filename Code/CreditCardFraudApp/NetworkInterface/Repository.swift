@@ -10,6 +10,10 @@ import Foundation
 class Repository {
     private let networkInterface: NetworkInterface
     
+    private enum UserDefaultsKeys {
+        static let userId = "userId"
+    }
+    
     init(networkInterface: NetworkInterface) {
         self.networkInterface = networkInterface
     }
@@ -118,12 +122,58 @@ class Repository {
     ///   - password: User password
     ///   - completion: Completion handler with result
     func signup(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        struct SignupResponse: Decodable {
+            struct SignupUser: Decodable {
+                let id: String
+            }
+            
+            let user: SignupUser
+        }
+        
         let request = SignupRequest(email: email, password: password)
         
         networkInterface.signup(request) { result in
             switch result {
-            case .success:
-                completion(.success(()))
+            case .success(let data):
+                do {
+                    let decoded = try JSONDecoder().decode(SignupResponse.self, from: data)
+                    self.networkInterface.setUserId(decoded.user.id)
+                    UserDefaults.standard.set(decoded.user.id, forKey: UserDefaultsKeys.userId)
+                    completion(.success(()))
+                } catch {
+                    completion(.failure(error))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
+
+    /// Login
+    /// - Parameters:
+    ///   - email: User email address
+    ///   - password: User password
+    ///   - completion: Completion handler with result
+    func login(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        struct LoginResponse: Decodable {
+            struct LoginUser: Decodable {
+                let id: String
+            }
+            
+            let user: LoginUser
+        }
+        
+        networkInterface.login(email: email, password: password) { result in
+            switch result {
+            case .success(let data):
+                do {
+                    let decoded = try JSONDecoder().decode(LoginResponse.self, from: data)
+                    self.networkInterface.setUserId(decoded.user.id)
+                    UserDefaults.standard.set(decoded.user.id, forKey: UserDefaultsKeys.userId)
+                    completion(.success(()))
+                } catch {
+                    completion(.failure(error))
+                }
             case .failure(let error):
                 completion(.failure(error))
             }

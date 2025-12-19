@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-secret, user_id'
 };
 const DEBUG = (Deno.env.get('DEBUG_LOGS') ?? '').toLowerCase() === 'true';
-function json(data: any, status = 200) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -16,7 +16,7 @@ function json(data: any, status = 200) {
     }
   });
 }
-const badRequest = (msg: string) => json({
+const badRequest = (msg) => json({
   error: msg
 }, 400);
 const forbidden = () => json({
@@ -28,7 +28,7 @@ const unauthorized = () => json({
 const notFound = (msg = 'Not found') => json({
   error: msg
 }, 404);
-async function readJson(req: Request): Promise<any | null> {
+async function readJson(req) {
   try {
     const body = await req.text();
     if (!body) return null;
@@ -37,7 +37,7 @@ async function readJson(req: Request): Promise<any | null> {
     return null;
   }
 }
-serve(async (req: Request) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', {
     headers: corsHeaders
   });
@@ -102,7 +102,7 @@ serve(async (req: Request) => {
       if (name != null && (typeof name !== 'string' || name.trim() === '')) return badRequest('If provided, name must be a non-empty string');
 
       // Build payload for admin API
-      const payload: any = {
+      const payload = {
         email,
         password,
         email_confirm: true
@@ -123,7 +123,7 @@ serve(async (req: Request) => {
       });
 
       // Try parse JSON; if parsing fails, fallback to text
-      let adminData: any = null;
+      let adminData = null;
       try {
         adminData = await adminResp.clone().json();
       } catch {
@@ -144,6 +144,173 @@ serve(async (req: Request) => {
       return json({
         user: adminData
       }, 201);
+    }
+
+    // -------------------------------
+    // GET /login?email=<email>&password=<password>
+    // Logs a user in by calling Supabase Auth REST API directly (password grant)
+    // Similar to /signup which calls the Auth REST Admin API directly.
+    // -------------------------------
+    if (path === '/login' && method === 'GET') {
+      const email = url.searchParams.get('email');
+      const password = url.searchParams.get('password');
+      if (!email || !password) return badRequest('Missing email or password');
+
+      // Supabase Auth REST endpoint for email/password login:
+      // POST /auth/v1/token?grant_type=password
+      const tokenResp = await fetch(`${supabaseUrlNoSlash}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      // Try parse JSON; if parsing fails, fallback to text
+      let tokenData = null;
+      try {
+        tokenData = await tokenResp.clone().json();
+      } catch {
+        try {
+          tokenData = await tokenResp.clone().text();
+        } catch {
+          tokenData = null;
+        }
+      }
+
+      if (!tokenResp.ok) {
+        if (DEBUG) console.log('[login][token-error]', tokenResp.status, tokenData);
+        return json({
+          error: tokenData ?? { status: tokenResp.status }
+        }, tokenResp.status === 200 ? 400 : tokenResp.status);
+      }
+
+      return json({
+        user: tokenData?.user ?? null,
+        session: tokenData
+      }, 200);
+    }
+
+    // -------------------------------
+    // POST /pns
+    // Body: { user_id, token, platform?, device_info? }
+    // Stores a push notification token row in public.pns
+    // -------------------------------
+    if (path === '/pns' && method === 'POST') {
+      const body = await readJson(req);
+      if (!body) return badRequest('Invalid or empty JSON');
+
+      const { user_id, token, platform, device_info } = body;
+      if (!user_id || !token) return badRequest('Missing required fields: user_id, token');
+
+      const insertObj = {
+        user_id,
+        token
+      };
+      if (platform != null) insertObj.platform = String(platform);
+      if (device_info != null) insertObj.device_info = String(device_info);
+
+      if (DEBUG) console.log('[pns][POST] inserting', {
+        user_id,
+        tokenPrefix: String(token).slice(0, 8),
+        hasPlatform: platform != null,
+        hasDeviceInfo: device_info != null
+      });
+
+      const { data, error } = await db
+        .from('pns')
+        .insert(insertObj)
+        .select('id,user_id,token,platform,device_info,is_active,created_at,last_used_at')
+        .single();
+
+      if (error) {
+        if (DEBUG) console.log('[pns][POST][db-error]', error.message);
+        return json({ error: error.message }, 400);
+      }
+
+      return json({ pns: data }, 201);
+    }
+
+    // -------------------------------
+    // POST /notify
+    // Body: { user_id, text }
+    // Looks up all active device tokens for a user in public.pns, then calls Pushy API
+    // -------------------------------
+    if (path === '/notify' && method === 'POST') {
+      const body = await readJson(req);
+      if (!body) return badRequest('Invalid or empty JSON');
+
+      const { user_id, text } = body;
+      if (!user_id || !text) return badRequest('Missing required fields: user_id, text');
+
+      const pushyKey = (Deno.env.get('PUSHY_SECRET_KEY') ?? '').trim();
+      if (!pushyKey) {
+        return json({ error: 'Server misconfig: missing PUSHY_SECRET_KEY' }, 500);
+      }
+
+      // Fetch active tokens for user
+      const { data: rows, error: tErr } = await db
+        .from('pns')
+        .select('token')
+        .eq('user_id', user_id)
+        .eq('is_active', true);
+
+      if (tErr) {
+        if (DEBUG) console.log('[notify][tokens][db-error]', tErr.message);
+        return json({ error: tErr.message }, 400);
+      }
+
+      const tokens = (rows ?? [])
+        .map((r) => r?.token)
+        .filter((t) => typeof t === 'string' && t.trim() !== '')
+        .map((t) => t.trim());
+
+      if (tokens.length === 0) {
+        return json({ error: 'No active device tokens for user' }, 404);
+      }
+      if (tokens.length > 100000) {
+        return json({ error: 'Too many device tokens (max 100000 per request)' }, 400);
+      }
+
+      if (DEBUG) console.log('[notify] sending', { user_id, tokens: tokens.length });
+
+      // Pushy Send Notifications API
+      const pushyResp = await fetch(`https://api.pushy.me/push?api_key=${encodeURIComponent(pushyKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: tokens,
+          data: { message: String(text) },
+          notification: {
+            title: 'Credit Card Fraud Detection',
+            body: String(text)
+          }
+        })
+      });
+
+      let pushyData = null;
+      try {
+        pushyData = await pushyResp.clone().json();
+      } catch {
+        try {
+          pushyData = await pushyResp.clone().text();
+        } catch {
+          pushyData = null;
+        }
+      }
+
+      if (!pushyResp.ok) {
+        if (DEBUG) console.log('[notify][pushy-error]', pushyResp.status, pushyData);
+        return json({ error: pushyData ?? { status: pushyResp.status } }, pushyResp.status);
+      }
+
+      // Best-effort: update last_used_at for this user's active tokens
+      const nowISO = new Date().toISOString();
+      await db.from('pns').update({ last_used_at: nowISO }).eq('user_id', user_id).eq('is_active', true);
+
+      return json({ pushy: pushyData }, 200);
     }
 
     // -------------------------------
@@ -207,7 +374,7 @@ serve(async (req: Request) => {
       if (!userId || !ccNumber || longitude == null || latitude == null || amount == null) {
         return badRequest('Missing required fields: userId, ccNumber, longitude, latitude, amount');
       }
-      const insertObj: any = {
+      const insertObj = {
         userId,
         ccNumber,
         longitude,
@@ -278,7 +445,7 @@ serve(async (req: Request) => {
       if (!transactionId || typeof fraud_flag !== 'boolean') {
         return badRequest('Missing required fields: transactionId (uuid), fraud_flag (boolean)');
       }
-      const patch: any = {
+      const patch = {
         fraud_flag,
         fraud_checked_at: new Date().toISOString()
       };
@@ -329,7 +496,7 @@ serve(async (req: Request) => {
     }
     // Fallback
     return notFound('Route not found');
-  } catch (error: any) {
+  } catch (error) {
     console.error('[edge] unhandled', {
       message: error?.message,
       stack: error?.stack

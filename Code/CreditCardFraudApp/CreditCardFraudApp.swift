@@ -164,6 +164,26 @@ class CreditCardFraudViewModel {
             }
         }
     }
+
+    func login(email: String, password: String, completion: ((Swift.Result<Void, Error>) -> Void)? = nil) {
+        isLoading = true
+        errorMessage = nil
+        
+        repository.login(email: email, password: password) { [weak self] result in
+            Task { @MainActor in
+                guard let self = self else { return }
+                self.isLoading = false
+                
+                switch result {
+                case .success:
+                    completion?(.success(()))
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                    completion?(.failure(error))
+                }
+            }
+        }
+    }
 }
 
 // Indicates where the app starts
@@ -171,41 +191,110 @@ class CreditCardFraudViewModel {
 struct CreditCardFraudApp: App {
     // Wire together the dependencies
     @UIApplicationDelegateAdaptor(CreditCardFraudAppDelegate.self) var appDelegate
-    private let networkInterface: NetworkInterface
-    private let repository: Repository
-    private let viewModel: CreditCardFraudViewModel
-    
-    init() {
-        // Initialize NetworkInterface with configuration
-        self.networkInterface = NetworkInterfaceImpl(
-            baseURL: "https://vddcuogkozydtepyzuyo.supabase.co",
-            adminSecret: "edge_admin@3333",
-            userId: "67c31a0d-7658-458b-9196-b3133b26cd00",
-            session: .shared
-        )
-        
-        // Initialize Repository with NetworkInterface
-        self.repository = Repository(networkInterface: networkInterface)
-        
-        // Initialize ViewModel with Repository
-        self.viewModel = CreditCardFraudViewModel(repository: repository)
-    }
+    @State private var showLogin: Bool = false
     
     var body: some Scene {
         WindowGroup {
-            LandingPageView()
-//            SignUpView()
+            if appDelegate.isSignedIn {
+                LandingPageView()
+                    .environment(appDelegate.viewModel)
+                    .task {
+                        // If the user was already signed in (restored from UserDefaults),
+                        // try to persist the device token to the backend now.
+                        appDelegate.persistPushTokenIfNeeded()
+                    }
+            } else {
+                if showLogin {
+                    LoginView(
+                        onLoginSuccess: {
+                            appDelegate.isSignedIn = true
+                            appDelegate.persistPushTokenIfNeeded()
+                        },
+                        onCreateAccountRequested: {
+                            showLogin = false
+                        }
+                    )
+                    .environment(appDelegate.viewModel)
+                } else {
+                    SignUpView(
+                        onSignUpSuccess: {
+                            appDelegate.isSignedIn = true
+                            appDelegate.persistPushTokenIfNeeded()
+                        },
+                        onLoginRequested: {
+                            showLogin = true
+                        }
+                    )
+                    .environment(appDelegate.viewModel)
+                }
+            }
 //            AccountView()
 //            ReportsView(isAdmin: true)
-                .environment(viewModel)
         }
     }
 }
 
 
+@Observable
 class CreditCardFraudAppDelegate: NSObject, UIApplicationDelegate {
+    private enum UserDefaultsKeys {
+        static let userId = "userId"
+        static let pushyToken = "pushyToken"
+        static let pushyTokenPersisted = "pushyTokenPersistedToBackend"
+        static let pushyTokenPersistedValue = "pushyTokenPersistedValue"
+    }
+    
+    var isSignedIn: Bool
+    let networkInterface: NetworkInterface
+    let repository: Repository
+    let viewModel: CreditCardFraudViewModel
     
     var window: UIWindow?
+    
+    override init() {
+        let storedUserId = (UserDefaults.standard.string(forKey: UserDefaultsKeys.userId) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasStoredUserId = !storedUserId.isEmpty
+        
+        self.isSignedIn = hasStoredUserId
+        
+        self.networkInterface = NetworkInterfaceImpl(
+            baseURL: "https://vddcuogkozydtepyzuyo.supabase.co",
+            adminSecret: "edge_admin@3333",
+            userId: hasStoredUserId ? storedUserId : "67c31a0d-7658-458b-9196-b3133b26cd00",
+            session: .shared
+        )
+        
+        self.repository = Repository(networkInterface: networkInterface)
+        self.viewModel = CreditCardFraudViewModel(repository: repository)
+        
+        super.init()
+    }
+
+    /// Persist the Pushy device token to Supabase if the user is signed in and we haven't done it yet.
+    func persistPushTokenIfNeeded() {
+        guard isSignedIn else { return }
+
+        let token = (UserDefaults.standard.string(forKey: UserDefaultsKeys.pushyToken) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !token.isEmpty else { return }
+
+        let alreadyPersisted = UserDefaults.standard.bool(forKey: UserDefaultsKeys.pushyTokenPersisted)
+        let persistedValue = (UserDefaults.standard.string(forKey: UserDefaultsKeys.pushyTokenPersistedValue) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if alreadyPersisted && persistedValue == token {
+            return
+        }
+
+        networkInterface.registerPushNotificationToken(token: token) { result in
+            switch result {
+            case .success:
+                UserDefaults.standard.set(true, forKey: UserDefaultsKeys.pushyTokenPersisted)
+                UserDefaults.standard.set(token, forKey: UserDefaultsKeys.pushyTokenPersistedValue)
+                print("Pushy token persisted to backend")
+            case .failure(let error):
+                // Leave flags unset so we can retry later.
+                print("Failed to persist Pushy token to backend: \(error.localizedDescription)")
+            }
+        }
+    }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         
@@ -220,8 +309,17 @@ class CreditCardFraudAppDelegate: NSObject, UIApplicationDelegate {
             // Print device token to console
             print("Pushy device token: \(deviceToken)")
             
-            // Persist the token locally and send it to your backend later
-            UserDefaults.standard.set(deviceToken, forKey: "pushyToken")
+            // Persist the token locally; it will be sent to the backend only once the user is signed in.
+            let existing = (UserDefaults.standard.string(forKey: UserDefaultsKeys.pushyToken) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if existing != deviceToken {
+                // Token changed -> mark as not persisted so we re-send once signed in.
+                UserDefaults.standard.set(false, forKey: UserDefaultsKeys.pushyTokenPersisted)
+                UserDefaults.standard.set("", forKey: UserDefaultsKeys.pushyTokenPersistedValue)
+            }
+            UserDefaults.standard.set(deviceToken, forKey: UserDefaultsKeys.pushyToken)
+
+            // If we're already signed in, attempt to persist immediately.
+            self.persistPushTokenIfNeeded()
         })
         
         // Enable in-app notification banners (iOS 10+)

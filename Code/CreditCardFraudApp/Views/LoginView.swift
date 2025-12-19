@@ -8,10 +8,18 @@
 import SwiftUI
 
 struct LoginView: View {
+    @Environment(CreditCardFraudViewModel.self) var vm
+
     // MARK: - State
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var isPasswordVisible: Bool = false
+    
+    /// Optional callback so the app can move to LandingPageView
+    var onLoginSuccess: (() -> Void)? = nil
+    
+    /// Optional callback to switch to SignUpView
+    var onCreateAccountRequested: (() -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -110,20 +118,53 @@ struct LoginView: View {
                             .font(.caption2)
                             .foregroundColor(.gray)
                     }
+                    
+                    if let errorMessage = vm.errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundColor(.red)
+                            .padding(.top, 4)
+                    }
 
                     // Log In button
                     Button(action: {
-                        // TODO: Hook this up to Supabase later
-                        print("Log In tapped")
+                        guard !email.isEmpty else {
+                            vm.errorMessage = "Email is required"
+                            return
+                        }
+                        
+                        guard !password.isEmpty else {
+                            vm.errorMessage = "Password is required"
+                            return
+                        }
+                        
+                        vm.login(email: email, password: password) { result in
+                            switch result {
+                            case .success:
+                                onLoginSuccess?()
+                            case .failure:
+                                // Error is already set in vm.errorMessage
+                                break
+                            }
+                        }
                     }) {
-                        Text("Log In")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(Color(.systemBlue))
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
+                        HStack {
+                            if vm.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            }
+                            
+                            Text(vm.isLoading ? "Logging In..." : "Log In")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
                     }
+                    .background(Color(.systemBlue))
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    .disabled(vm.isLoading)
                     .padding(.top, 4)
 
                     // Forgot password
@@ -144,8 +185,7 @@ struct LoginView: View {
                             .foregroundColor(.gray)
 
                         Button(action: {
-                            // TODO: Navigate to SignUpView later
-                            print("Create account tapped")
+                            onCreateAccountRequested?()
                         }) {
                             Text("Create")
                                 .font(.footnote)
@@ -173,12 +213,18 @@ struct LoginView: View {
 
 struct LoginView_Previews: PreviewProvider {
     static var previews: some View {
+        let networkInterface = NetworkInterfaceImpl(baseURL: "", adminSecret: "", userId: "")
+        let repo = Repository(networkInterface: networkInterface)
+        let vm = CreditCardFraudViewModel(repository: repo)
+        
         Group {
             LoginView()
+                .environment(vm)
                 .previewDevice("iPhone 17 Pro")
 
             LoginView()
                 .preferredColorScheme(.dark)
+                .environment(vm)
                 .previewDevice("iPhone 17 Pro")
         }
     }

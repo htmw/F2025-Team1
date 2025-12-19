@@ -37,6 +37,9 @@ struct SignUpView: View {
 
     /// Optional callback so the app can move to LandingPageView later
     var onSignUpSuccess: (() -> Void)? = nil
+    
+    /// Optional callback to switch to LoginView
+    var onLoginRequested: (() -> Void)? = nil
 
     var body: some View {
         ZStack {
@@ -211,7 +214,7 @@ struct SignUpView: View {
                             .foregroundColor(.secondary)
 
                         Button("Log in") {
-                            // You can later connect this to a LoginView
+                            onLoginRequested?()
                         }
                         .font(.footnote.weight(.semibold))
                     }
