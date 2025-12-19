@@ -157,7 +157,45 @@ def send_to_supabase(tx: Dict[str, Any], model_out: Dict[str, Any]):
 
 
 # ================================================================
-# 6. MAIN
+# 6. IF FRAUD -> NOTIFY VIA /notify
+# ================================================================
+
+def send_notify(user_id: str, text: str):
+    """
+    Calls the Supabase Edge Function /notify route to trigger Pushy notifications
+    for all active devices registered for the given user_id.
+    """
+    url = f"{EDGE_BASE_URL}/notify"
+    headers = {
+        "Content-Type": "application/json",
+        "x-admin-secret": EDGE_ADMIN_SECRET,
+    }
+
+    resp = requests.post(url, json={"user_id": user_id, "text": text}, headers=headers)
+    print("Notify Status:", resp.status_code)
+    try:
+        print("Notify Response JSON:", resp.json())
+    except Exception:
+        print("Notify Raw response:", resp.text)
+
+
+def check_fraud_and_notify(tx: Dict[str, Any], model_out: Dict[str, Any]):
+    """
+    If the transaction is fraudulent, send a push notification via /notify.
+    """
+    if not model_out.get("fraud_flag", False):
+        return
+
+    cc_last4 = str(tx.get("ccNumber", ""))[-4:]
+    message = (
+        "We've detected a fraudulent transaction on your credit card ending in "
+        f"{cc_last4}"
+    )
+    send_notify(user_id=str(tx.get("userId")), text=message)
+
+
+# ================================================================
+# 7. MAIN
 # ================================================================
 
 def main():
@@ -168,6 +206,7 @@ def main():
     print("Model Output:", model_out)
 
     send_to_supabase(tx, model_out)
+    check_fraud_and_notify(tx, model_out)
 
 
 if __name__ == "__main__":
