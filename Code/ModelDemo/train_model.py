@@ -1,4 +1,5 @@
-
+import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import xgboost as xgb
@@ -11,7 +12,28 @@ from sklearn.metrics import classification_report, confusion_matrix, roc_auc_sco
 
 # --- 1. Data Loading and Feature Engineering ---
 print("1. Loading Data and Engineering 'Hour' Feature...")
-data = pd.read_csv('F2025-Team1\data\creditcard.csv')
+
+# Provide the dataset path via env var to avoid hardcoding machine-specific paths.
+# Example:
+#   export CREDITCARD_CSV="/path/to/creditcard.csv"
+creditcard_csv = os.getenv("CREDITCARD_CSV", "").strip()
+if creditcard_csv:
+    data_path = Path(creditcard_csv)
+else:
+    # Common local locations (edit as needed)
+    candidates = [
+        Path("data") / "creditcard.csv",
+        Path("F2025-Team1") / "data" / "creditcard.csv",
+        Path(__file__).resolve().parent / "data" / "creditcard.csv",
+    ]
+    data_path = next((p for p in candidates if p.exists()), None)
+
+if not data_path or not data_path.exists():
+    raise FileNotFoundError(
+        "Could not find creditcard.csv. Set CREDITCARD_CSV to the full path of the dataset."
+    )
+
+data = pd.read_csv(data_path)
 
 # Feature Engineering: Convert 'Time' (seconds elapsed) into 'Hour' (0-24)
 data['Hour'] = data['Time'].apply(lambda x: (x / 3600) % 24)

@@ -1,0 +1,26 @@
+# ModelDemo requirements (covers: train_model.py, api_service.py, demo_app.py, transaction_generator.py)
+
+# Core / utilities
+requests>=2.31.0
+numpy>=1.26.0
+joblib>=1.3.0
+
+# Training + preprocessing
+pandas>=2.1.0
+# Keep scikit-learn/imbalanced-learn in a compatible pair.
+# The current training artifacts in this repo were created with scikit-learn 1.7.2.
+scikit-learn==1.7.2
+imbalanced-learn==0.14.0
+
+# Model
+xgboost>=2.0.0
+
+# API service
+fastapi>=0.104.0
+pydantic>=2.5.0
+uvicorn[standard]>=0.24.0
+
+# Demo UI
+streamlit>=1.28.0
+
+
