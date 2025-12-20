@@ -183,7 +183,9 @@ def check_fraud_and_notify(tx: Dict[str, Any], model_out: Dict[str, Any]):
     """
     If the transaction is fraudulent, send a push notification via /notify.
     """
+    print(f"{model_out}")
     if not model_out.get("fraud_flag", False):
+        print("No fraud detected")
         return
 
     cc_last4 = str(tx.get("ccNumber", ""))[-4:]
